@@ -1,14 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Upload, FileText, ChevronRight, AlertCircle, BookOpen, BarChart2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { 
+  Upload, 
+  FileText, 
+  ChevronRight, 
+  ChevronDown,
+  ChevronUp,
+  AlertCircle, 
+  BookOpen, 
+  BarChart2, 
+  Users, 
+  User, 
+  MessageSquare,
+  Gavel
+} from 'lucide-react';
 
 // --- Color Scale Logic ---
 const getScoreColor = (score) => {
   const s = parseInt(score);
   if (isNaN(s)) return 'bg-white hover:bg-gray-50'; // Default
 
-  // 1-10 Scale mapping as requested
-  // 10: Green, 9: Light Green, 8: Yellow-Green, 7: Light Yellow
-  // 6: Dark Yellow, <6: Shades of Red
+  // 1-10 Scale mapping
   if (s >= 10) return 'bg-green-500 text-white';
   if (s === 9) return 'bg-green-300 text-gray-900';
   if (s === 8) return 'bg-lime-300 text-gray-900';
@@ -34,87 +45,35 @@ const getScoreBadgeColor = (score) => {
 // --- Parsers ---
 
 /**
- * Robust CSV Parser that handles quoted fields with newlines
- * Essential for the provided sample data which contains complex text blocks
- */
-const parseCSV = (text) => {
-  const rows = [];
-  let currentRow = [];
-  let currentField = '';
-  let insideQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"') {
-      if (insideQuotes && nextChar === '"') {
-         currentField += '"';
-         i++; // skip escaped quote
-      } else {
-         insideQuotes = !insideQuotes;
-      }
-    } else if (char === ',' && !insideQuotes) {
-      currentRow.push(currentField.trim());
-      currentField = '';
-    } else if ((char === '\r' || char === '\n') && !insideQuotes) {
-      if (char === '\r' && nextChar === '\n') i++;
-      currentRow.push(currentField.trim());
-      if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== '')) {
-        rows.push(currentRow);
-      }
-      currentRow = [];
-      currentField = '';
-    } else {
-      currentField += char;
-    }
-  }
-  if (currentField || currentRow.length > 0) {
-    currentRow.push(currentField.trim());
-    rows.push(currentRow);
-  }
-  return rows;
-};
-
-/**
  * Custom USFM Parser
- * Designed to strip metadata, footnotes, and alignment data,
- * extracting only the chapter, verse, and scripture text.
+ * Strips metadata, footnotes, extracting chapter/verse/text.
  */
 const parseUSFM = (text) => {
   const book = {};
   
-  // 1. Clean extraneous tags (Footnotes \f ... \f*, Word Alignment \w ... \w*, etc)
-  // We utilize a regex that lazily matches content between tags
   let cleanText = text
-    .replace(/\\f\s.+?\\f\*/g, '') // Remove footnotes
-    .replace(/\\x\s.+?\\x\*/g, '') // Remove cross references
-    .replace(/\\w\s.+?\\w\*/g, '') // Remove word alignment
-    .replace(/\\r/g, '')            // Remove references
-    .replace(/\\s\d/g, '')          // Remove headings
-    .replace(/\\p/g, '')            // Remove paragraph markers
-    .replace(/\\q\d?/g, '')         // Remove poetic markers
-    .replace(/\\b/g, '')            // Remove breaks
-    .replace(/\\m/g, '')            // Remove margins
-    .replace(/\\nb/g, '');          // Remove no-break
+    .replace(/\\f\s.+?\\f\*/g, '') 
+    .replace(/\\x\s.+?\\x\*/g, '') 
+    .replace(/\\w\s.+?\\w\*/g, '') 
+    .replace(/\\r/g, '')            
+    .replace(/\\s\d/g, '')          
+    .replace(/\\p/g, '')            
+    .replace(/\\q\d?/g, '')         
+    .replace(/\\b/g, '')            
+    .replace(/\\m/g, '')            
+    .replace(/\\nb/g, '');          
 
-  // 2. Split by Chapter
   const chapters = cleanText.split(/\\c\s+(\d+)/);
   
-  // The split results in [preamble, chNum, content, chNum, content...]
   for (let i = 1; i < chapters.length; i += 2) {
     const chapterNum = parseInt(chapters[i]);
     const content = chapters[i + 1];
-    
     book[chapterNum] = {};
 
-    // 3. Split by Verse
     const verses = content.split(/\\v\s+(\d+)/);
     for (let j = 1; j < verses.length; j += 2) {
       const verseNum = parseInt(verses[j]);
       let verseText = verses[j + 1];
-      
-      // Final cleanup of any remaining backslash commands or excessive whitespace
       verseText = verseText.replace(/\\[a-z0-9]+\s?/g, ' ').replace(/\s+/g, ' ').trim();
       
       if (verseText) {
@@ -122,14 +81,48 @@ const parseUSFM = (text) => {
       }
     }
   }
-  
   return book;
 };
 
+// --- Helper Components ---
+
+const CollapsibleCard = ({ title, icon: Icon, children, defaultOpen = false, score = null }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-4">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          {Icon && <Icon size={18} className="text-gray-500" />}
+          <span className="font-semibold text-gray-700">{title}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {score !== null && (
+            <span className={`text-xs font-bold px-2 py-1 rounded-full ${score >= 8 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+              Score: {score}
+            </span>
+          )}
+          {isOpen ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+        </div>
+      </button>
+      
+      {isOpen && (
+        <div className="p-5 border-t border-gray-100">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Main Application ---
 
 export default function BibleAnalyzer() {
   const [usfmData, setUsfmData] = useState(null);
-  const [csvData, setCsvData] = useState(null);
+  const [analysisData, setAnalysisData] = useState(null); // Changed from csvData
   const [activeChapter, setActiveChapter] = useState(1);
   const [activeVerse, setActiveVerse] = useState(null); // { c, v }
   const [error, setError] = useState(null);
@@ -145,67 +138,62 @@ export default function BibleAnalyzer() {
       try {
         const parsed = parseUSFM(evt.target.result);
         setUsfmData(parsed);
-        // Default to first chapter found
         const firstCh = Object.keys(parsed)[0];
         if (firstCh) setActiveChapter(parseInt(firstCh));
+        setError(null);
       } catch (err) {
-        setError("Failed to parse USFM file. Ensure it is valid UTF-8 text.");
+        setError("Failed to parse USFM file.");
       }
     };
     reader.readAsText(file);
   };
 
-  const handleCsvUpload = (e) => {
+  const handleJsonUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const rawRows = parseCSV(evt.target.result);
+        const json = JSON.parse(evt.target.result);
         
-        // Assume Header: Chapter, Verse, Face_Annotation, Score, Final_Analysis
-        // We'll map headers to indices to be safe
-        const headers = rawRows[0].map(h => h.toLowerCase().trim());
-        const cIdx = headers.indexOf('chapter');
-        const vIdx = headers.indexOf('verse');
-        const sIdx = headers.indexOf('score');
-        const fIdx = headers.findIndex(h => h.includes('face'));
-        const aIdx = headers.findIndex(h => h.includes('analysis'));
-
-        if (cIdx === -1 || vIdx === -1) {
-          setError("CSV must have 'Chapter' and 'Verse' columns.");
-          return;
+        // Validation based on schema
+        if (!json.chapter || !Array.isArray(json.analysis)) {
+          throw new Error("Invalid JSON schema: Missing 'chapter' or 'analysis' array.");
         }
 
-        const dataMap = {};
-        
-        // Start from index 1 to skip header
-        for (let i = 1; i < rawRows.length; i++) {
-          const row = rawRows[i];
-          if (row.length < 2) continue;
+        const chapter = json.chapter;
+        const newMap = { ...analysisData }; // Preserve existing data if any
 
-          const c = parseInt(row[cIdx]);
-          const v = parseInt(row[vIdx]);
-          
-          if (!dataMap[c]) dataMap[c] = {};
-          
-          dataMap[c][v] = {
-            face: fIdx > -1 ? row[fIdx] : '',
-            score: sIdx > -1 ? row[sIdx] : '',
-            analysis: aIdx > -1 ? row[aIdx] : '',
-            fullRow: row
-          };
-        }
-        setCsvData(dataMap);
+        if (!newMap[chapter]) newMap[chapter] = {};
+
+        // Map the array to a verse-lookup object
+        json.analysis.forEach(item => {
+          if (item.verse) {
+            newMap[chapter][item.verse] = item;
+          }
+        });
+
+        setAnalysisData(newMap);
+        setError(null);
       } catch (err) {
-        setError("Failed to parse CSV file.");
+        setError("Failed to parse JSON file. Ensure it matches the schema.");
       }
     };
     reader.readAsText(file);
   };
 
-  // --- Derived State ---
+  // --- Derived Data Helpers ---
+
+  const getDebateInfo = (verseAnalysis) => {
+    if (!verseAnalysis || !verseAnalysis.analysis) return null;
+    return verseAnalysis.analysis.find(a => a.type === 'debate');
+  };
+
+  const getIndividualAnalyses = (verseAnalysis) => {
+    if (!verseAnalysis || !verseAnalysis.analysis) return [];
+    return verseAnalysis.analysis.filter(a => a.type === 'individual');
+  };
 
   const chapters = useMemo(() => {
     if (!usfmData) return [];
@@ -222,26 +210,127 @@ export default function BibleAnalyzer() {
       .sort((a, b) => a - b)
       .map(vNum => {
         const text = chData[vNum];
-        // Check for CSV match
-        const analysis = csvData?.[activeChapter]?.[vNum];
+        // Check for Analysis match
+        const verseData = analysisData?.[activeChapter]?.[vNum];
+        const debate = getDebateInfo(verseData);
+        
         return {
           vNum,
           text,
-          analysis
+          debateScore: debate ? debate.score : null
         };
       });
-  }, [usfmData, csvData, activeChapter]);
+  }, [usfmData, analysisData, activeChapter]);
 
   const selectedVerseData = useMemo(() => {
     if (!activeVerse || !usfmData) return null;
     const { c, v } = activeVerse;
     
+    const rawAnalysis = analysisData?.[c]?.[v];
+
     return {
       c, v,
       text: usfmData[c]?.[v],
-      analysis: csvData?.[c]?.[v]
+      rawAnalysis,
+      debate: getDebateInfo(rawAnalysis),
+      individuals: getIndividualAnalyses(rawAnalysis)
     };
-  }, [activeVerse, usfmData, csvData]);
+  }, [activeVerse, usfmData, analysisData]);
+
+
+  // --- Sub-components for Right Panel ---
+
+  const IndividualAnalysisSection = ({ models }) => {
+    const [selectedModelIndex, setSelectedModelIndex] = useState(0);
+
+    if (!models || models.length === 0) return <p className="text-gray-500 italic">No individual models found.</p>;
+
+    const currentModel = models[selectedModelIndex];
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select Model</label>
+          <select 
+            value={selectedModelIndex} 
+            onChange={(e) => setSelectedModelIndex(parseInt(e.target.value))}
+            className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+          >
+            {models.map((m, idx) => (
+              <option key={idx} value={idx}>{m.model} (Score: {m.score})</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+             <span className="font-bold text-gray-700">{currentModel.model}</span>
+             <span className={`text-xs font-bold px-2 py-1 rounded ${getScoreBadgeColor(currentModel.score)}`}>
+               Score: {currentModel.score}
+             </span>
+          </div>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {currentModel.reasoning}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const DebateAnalysisSection = ({ debate }) => {
+    if (!debate) return <p className="text-gray-500 italic">No debate data available.</p>;
+
+    return (
+      <div className="space-y-2">
+        {/* Debate Transcript */}
+        <CollapsibleCard title="Debate Transcript" icon={MessageSquare} defaultOpen={true}>
+          <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+            {debate.debate_transcript.map((turn, idx) => (
+              <div key={idx} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded-lg border border-blue-100' : ''}`}>
+                <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${turn.role === 'moderator' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                  {turn.role === 'moderator' ? 'M' : turn.agent.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold uppercase text-gray-500">{turn.agent} ({turn.role})</span>
+                    {turn.proposed_score && (
+                       <span className="text-xs font-mono bg-gray-100 px-1 rounded">Score: {turn.proposed_score}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-800">
+                    {turn.argument || turn.feedback}
+                  </p>
+                  {turn.violators && turn.violators.length > 0 && (
+                    <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle size={12} />
+                      Violations: {turn.violators.join(', ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleCard>
+
+        {/* Closing Statements */}
+        <CollapsibleCard title="Closing Statements" icon={Gavel}>
+          <div className="space-y-4">
+            {debate.closing_statements.map((stmt, idx) => (
+              <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-sm text-gray-700">{stmt.agent}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${getScoreBadgeColor(stmt.score)}`}>
+                    Final: {stmt.score}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 italic">"{stmt.statement}"</p>
+              </div>
+            ))}
+          </div>
+        </CollapsibleCard>
+      </div>
+    );
+  };
 
 
   // --- Render ---
@@ -252,7 +341,7 @@ export default function BibleAnalyzer() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm flex-shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-lg text-white">
+          <div className="p-2 bg-indigo-600 rounded-lg text-white">
             <BookOpen size={20} />
           </div>
           <h1 className="text-xl font-bold text-gray-800 tracking-tight">Scripture Linguistic Analysis</h1>
@@ -273,17 +362,17 @@ export default function BibleAnalyzer() {
             </button>
           </div>
 
-          {/* CSV Upload */}
+          {/* JSON Upload */}
           <div className="relative group">
             <input 
               type="file" 
-              accept=".csv" 
-              onChange={handleCsvUpload}
+              accept=".json" 
+              onChange={handleJsonUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <button className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-colors ${csvData ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+            <button className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-colors ${analysisData ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
               <BarChart2 size={16} />
-              <span className="text-sm font-medium">{csvData ? 'Data Loaded' : 'Upload CSV'}</span>
+              <span className="text-sm font-medium">{analysisData ? 'Data Loaded' : 'Upload JSON'}</span>
             </button>
           </div>
         </div>
@@ -317,9 +406,8 @@ export default function BibleAnalyzer() {
 
             {/* Verse List */}
             <div className="flex-1 overflow-y-auto p-6 space-y-3">
-              {currentVerses.map(({ vNum, text, analysis }) => {
-                const score = analysis ? analysis.score : null;
-                const bgColorClass = score ? getScoreColor(score) : 'bg-white border border-gray-100 hover:border-blue-300';
+              {currentVerses.map(({ vNum, text, debateScore }) => {
+                const bgColorClass = debateScore ? getScoreColor(debateScore) : 'bg-white border border-gray-100 hover:border-blue-300';
                 const isSelected = activeVerse?.c === activeChapter && activeVerse?.v === vNum;
 
                 return (
@@ -336,12 +424,12 @@ export default function BibleAnalyzer() {
                       <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 text-sm font-bold opacity-70">
                         {vNum}
                       </span>
-                      <p className={`text-lg leading-relaxed ${score ? '' : 'text-gray-700'}`}>
+                      <p className={`text-lg leading-relaxed ${debateScore ? '' : 'text-gray-700'}`}>
                         {text}
                       </p>
-                      {score && (
+                      {debateScore && (
                         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold backdrop-blur-sm">
-                          {score}
+                          {debateScore}
                         </div>
                       )}
                     </div>
@@ -352,7 +440,7 @@ export default function BibleAnalyzer() {
           </div>
 
           {/* Right Column: Analysis Panel */}
-          <div className="w-1/3 min-w-[400px] bg-gray-50 flex flex-col border-l border-gray-200">
+          <div className="w-1/3 min-w-[450px] bg-gray-50 flex flex-col border-l border-gray-200">
             {selectedVerseData ? (
               <div className="flex flex-col h-full overflow-hidden">
                 <div className="p-6 border-b border-gray-200 bg-white shadow-sm">
@@ -363,53 +451,59 @@ export default function BibleAnalyzer() {
                   <h2 className="text-2xl font-serif text-gray-800 mb-2">
                     Chapter {selectedVerseData.c}, Verse {selectedVerseData.v}
                   </h2>
-                  <p className="text-gray-600 italic border-l-4 border-blue-500 pl-4 py-1">
+                  <p className="text-gray-600 italic border-l-4 border-indigo-500 pl-4 py-1 mb-2">
                     "{selectedVerseData.text}"
                   </p>
+                  
+                  {/* Metadata if available */}
+                  {selectedVerseData.rawAnalysis && (
+                     <div className="flex flex-wrap gap-2 text-xs mt-3">
+                        <span className="px-2 py-1 bg-gray-100 rounded text-gray-600 border border-gray-200">
+                           {selectedVerseData.rawAnalysis.greek}
+                        </span>
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-100">
+                           {selectedVerseData.rawAnalysis.annotation}
+                        </span>
+                     </div>
+                  )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                  {selectedVerseData.analysis ? (
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                  {selectedVerseData.rawAnalysis ? (
                     <div className="space-y-6">
                       
-                      {/* Score Card */}
-                      <div className={`p-5 rounded-xl border ${getScoreBadgeColor(selectedVerseData.analysis.score)}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-bold uppercase tracking-wide opacity-80">Linguistic Score</span>
-                          <span className="text-3xl font-black">{selectedVerseData.analysis.score}</span>
-                        </div>
-                        <div className="w-full bg-black/10 h-2 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-current opacity-50" 
-                            style={{ width: `${Math.min(selectedVerseData.analysis.score * 10, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Face Annotation */}
-                      {selectedVerseData.analysis.face && (
-                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Face Annotation</h3>
-                          <p className="text-gray-800 font-medium">
-                            {selectedVerseData.analysis.face}
-                          </p>
+                      {/* Top Score Card (Debate Score) */}
+                      {selectedVerseData.debate && (
+                        <div className={`p-5 rounded-xl border ${getScoreBadgeColor(selectedVerseData.debate.score)}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold uppercase tracking-wide opacity-80">Debate Consensus Score</span>
+                            <span className="text-3xl font-black">{selectedVerseData.debate.score}</span>
+                          </div>
+                          <div className="w-full bg-black/10 h-2 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-current opacity-50" 
+                              style={{ width: `${Math.min(selectedVerseData.debate.score * 10, 100)}%` }}
+                            ></div>
+                          </div>
                         </div>
                       )}
 
-                      {/* Detailed Analysis */}
-                      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Final Analysis</h3>
-                        <div className="prose prose-sm prose-blue max-w-none text-gray-700 whitespace-pre-wrap">
-                          {selectedVerseData.analysis.analysis}
-                        </div>
-                      </div>
+                      {/* Card 1: Individual Analysis */}
+                      <CollapsibleCard title="Individual Analysis" icon={User}>
+                        <IndividualAnalysisSection models={selectedVerseData.individuals} />
+                      </CollapsibleCard>
+
+                      {/* Card 2: Debate Analysis */}
+                      <CollapsibleCard title="Debate Analysis" icon={Users} defaultOpen={true}>
+                         <DebateAnalysisSection debate={selectedVerseData.debate} />
+                      </CollapsibleCard>
 
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
                       <BarChart2 size={48} className="mb-4 opacity-20" />
                       <p>No linguistic data available for this verse.</p>
-                      <p className="text-sm mt-2">Upload a CSV file to see analysis.</p>
+                      <p className="text-sm mt-2">Upload a JSON file to see analysis.</p>
                     </div>
                   )}
                 </div>
@@ -430,17 +524,17 @@ export default function BibleAnalyzer() {
         /* Empty State */
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-6">
           <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Upload size={32} />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Start your Analysis</h2>
             <p className="text-gray-500 mb-8">
-              Upload a standard USFM file to parse scripture, then attach your CSV data for deep linguistic insights.
+              Upload a standard USFM file to parse scripture, then attach your JSON data for deep linguistic insights.
             </p>
             
             <div className="space-y-3">
               <label className="block w-full">
-                <div className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2">
+                <div className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2">
                   <FileText size={18} />
                   Choose USFM File
                 </div>

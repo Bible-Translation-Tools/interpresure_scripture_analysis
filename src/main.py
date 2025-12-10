@@ -89,10 +89,16 @@ async def run_initial_analysis():
         }
     }
     
+    # linguists = [
+    #     LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+    #     LinguistAgent("GPT5_LINGUIST", "gpt-5", OPENAI_KEY, None, task_description, response_format)
+    # ]
+
     linguists = [
-        LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-        LinguistAgent("GPT5_LINGUIST", "gpt-5", OPENAI_KEY, None, task_description, response_format)
+        LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+        LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
     ]
+
     critic = CriticAgent()
 
     config_list = [
@@ -146,7 +152,7 @@ async def run_initial_analysis():
             })
 
     final_df = pd.DataFrame(results)
-    final_df.to_csv("debate_analysis_results.csv", index=False)
+    final_df.to_csv("opening_statements.csv", index=False)
     print("\n--- AutoGen Script Finished ---")
     print("Results saved to autogen_face_analysis_results.csv")
     print(final_df.to_markdown(index=False, numalign="left", stralign="left"))
@@ -161,8 +167,17 @@ async def run_initial_analysis():
 async def run(df):
     debate = Debate()
     results = await debate.process_interleaved_dataframe(df)
-    print(results)
+
+    results.to_csv("debate_output.csv")
+
+    # with open("debate_output.json", "w") as fp:
+    #     fp.write(json.dumps(results))
+
+from report.coalesce import coalesce_csvs
 
 if __name__ == "__main__":
-    df = pd.read_csv("debate_analysis_results.csv")
-    asyncio.run(run(df))
+    # df = pd.read_csv("debate_analysis_results.csv")
+    # asyncio.run(run(df))
+
+    # coalesce_csvs("debate_analysis_results.csv", "debate_results.csv", "out.json")
+    coalesce_csvs("debate_analysis_results.csv", "debate_output.csv", "out2.json")

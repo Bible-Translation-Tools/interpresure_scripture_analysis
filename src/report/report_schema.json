@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "book": {
+      "type": "string",
+      "description": "The name of the book being analyzed (e.g., 'Philemon')."
+    },
+    "chapter": {
+      "type": "integer",
+      "description": "The chapter number."
+    },
+    "category": {
+      "type": "string",
+      "description": "The linguistic category of the analysis."
+    },
+    "analysis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "verse": {
+            "type": "integer",
+            "description": "The verse number."
+          },
+          "greek": {
+            "type": "string",
+            "description": "The original Greek text."
+          },
+          "translation": {
+            "type": "string",
+            "description": "The translation being evaluated."
+          },
+          "annotation": {
+            "type": "string",
+            "description": "The target linguistic/pragmatic goal (e.g., 'Enhance Positive Face')."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Contextual notes regarding the verse's linguistic features."
+          },
+          "analysis": {
+            "type": "array",
+            "description": "A list of analyses from individual agents and the debate consensus.",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/individual_analysis"
+                },
+                {
+                  "$ref": "#/definitions/debate_analysis"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "verse",
+          "greek",
+          "translation",
+          "annotation",
+          "analysis"
+        ]
+      }
+    }
+  },
+  "required": [
+    "book",
+    "chapter",
+    "category",
+    "analysis"
+  ],
+  "definitions": {
+    "individual_analysis": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "individual"
+        },
+        "model": {
+          "type": "string",
+          "description": "The name of the LLM model used."
+        },
+        "score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "The detailed linguistic reasoning provided by the model."
+        }
+      },
+      "required": [
+        "type",
+        "model",
+        "score",
+        "reasoning"
+      ]
+    },
+    "debate_analysis": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "debate"
+        },
+        "score": {
+          "type": "integer",
+          "description": "The final consensus score (usually the minimum of the closing scores)."
+        },
+        "debate_transcript": {
+          "type": "array",
+          "description": "The chronological log of the debate rounds.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["linguist", "moderator"]
+              },
+              "agent": {
+                "type": "string"
+              },
+              "argument": {
+                "type": "string",
+                "description": "The argument made by a linguist."
+              },
+              "proposed_score": {
+                "type": ["integer", "null"],
+                "description": "The score proposed by a linguist in this turn."
+              },
+              "intervened": {
+                "type": "boolean",
+                "description": "Whether the moderator intervened."
+              },
+              "feedback": {
+                "type": "string",
+                "description": "Feedback provided by the moderator."
+              },
+              "violators": {
+                 "type": "array",
+                 "items": { "type": "string" }
+              }
+            },
+            "required": ["role", "agent"]
+          }
+        },
+        "closing_statements": {
+          "type": "array",
+          "description": "The final closing arguments from each agent.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "agent": {
+                "type": "string"
+              },
+              "statement": {
+                "type": "string"
+              },
+              "score": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "agent",
+              "statement",
+              "score"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "score",
+        "debate_transcript",
+        "closing_statements"
+      ]
+    }
+  }
+}

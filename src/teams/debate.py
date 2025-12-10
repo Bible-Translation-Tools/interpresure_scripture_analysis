@@ -24,15 +24,21 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 class LinguistTurn(BaseModel):
     """The structured output for a linguist's turn in the debate."""
     agent_name: str = Field(description="The name of the linguist speaking.")
-    argument: str = Field(description="Your critique. Reference specific peers if agreeing/disagreeing.")
+    argument: str = Field(description="Your critique. Reference specific peers if agreeing/disagreeing. If this is a closing statement, include all specific details as to justify your score, even if the idea originated from a peer. This field should be a string containing Markdown formatted text.")
     proposed_score: int = Field(description="The score (1-10) you currently advocate for.")
 
-class ModeratorConsensus(BaseModel):
+class ModeratorTurn(BaseModel):
+    """The output from the moderator."""
+    intervene: bool = Field(description="Whether the moderator is stepping in to intervene. False if there is no need to intervene.")
+    violators: List[str] = Field(description="The names of the participants who require intervention. Empty if there is no need to intervene.")
+    feedback: str = Field(description="The feedback to give the debate participant if there is an intervention. Empty if there is no need to intervene.")
+
+class DebateCommentator(BaseModel):
     """The final consensus output from the moderator."""
-    chapter: str = Field(description="The chapter debated.")
+    chapter: int = Field(description="The chapter debated.")
     verse: str = Field(description="The verse debated.")
     final_consensus_score: int = Field(description="The final agreed-upon score (integer). Choose the lowest score in the event of non-consensus.")
-    consensus_summary: str = Field(description="A concise summary of why this score was chosen.")
+    consensus_summary: str = Field(description="A detailed explanation of why this score was chosen.")
     closing_statements: List[str] = Field(description="Closing remarks from the participants in markdown, beginning with a section heading of the participant name.")
 
 task_description = f"""
@@ -51,12 +57,19 @@ response_format = {
 
 class Debate:
     def __init__(self):
+        # self.linguists = [
+        #     LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+        #     LinguistAgent("GPT5_LINGUIST", "gpt-5", OPENAI_KEY, None, task_description, response_format)
+        # ]
+
         self.linguists = [
-            LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-            LinguistAgent("GPT5_LINGUIST", "gpt-5", OPENAI_KEY, None, task_description, response_format)
+            LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+            LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
         ]
 
-    async def run_single_verse_debate(self, group_df: pd.DataFrame) -> dict:
+        
+
+    async def run_single_verse_debate(self, group_df: pd.DataFrame):
         """
         Runs a RoundRobin debate for a single group of 3 dataframe rows (one verse).
         """
@@ -83,7 +96,7 @@ class Debate:
             )
         
         initial_context += (
-            "\n**TASK:** Discuss these initial findings. Critique each other. "
+            "\n**TASK:** Debate these initial findings. Critique each other. "
             "Come to a consensus score. Err on the side of being critical (lower scores)."
         )
         
@@ -91,50 +104,77 @@ class Debate:
         # Moderator must output the final JSON summary
         moderator_client = OpenAIChatCompletionClient(
             model="gpt-4o",
-            response_format=ModeratorConsensus,
+            response_format=ModeratorTurn,
             key=OPENAI_KEY
         )
 
         moderator = AssistantAgent(
             name="Moderator", 
             model_client=moderator_client, 
-            system_message="Listen to the debate. In your final turn, output the consensus JSON."
+            system_message=f"""
+            You are a moderator of a debate between linguists. 
+            The linguists are supposed to be discussing the translation of the following Greek text: 
+            >>> {greek_text}
+
+            The translation being evaluated is as follows:
+            >>> {translation}
+
+            The translation is intended to retain the following:
+            >>> {face}
+
+            Listen to the debate. Make sure the participants only evaluate the translation from a linguistic perspective.
+            
+            ONLY Intervene as a moderator if a linguist's response **DOES NOT** meet the following criteria:
+            1. The analysis must be based on verifiable linguistic, stylistic, or semantic arguments.
+            2. Words and phrases being analyzed **MUST** be present in the texts being analyzed.
+            """
         )
 
         # 4. Define Team (RoundRobin)
-        # Order: Sem -> Sty -> Cul -> Sem -> Sty -> Cul -> Moderator (End)
-        # 3 agents * 2 rounds = 6 turns. + 1 Moderator turn = 7 total.
-        termination = MaxMessageTermination(max_messages=7)
-
-        party = [x.get_agent() for x in self.linguists]
+        debators = [x.get_agent() for x in self.linguists]
+        
+        rounds = 2
+        debate_rounds =  (len(debators) + 1) * rounds + 1
+        termination = MaxMessageTermination(max_messages=debate_rounds)
 
         debate_team = RoundRobinGroupChat(
-            participants=[*party, moderator],
+            participants=[*debators, moderator],
             termination_condition=termination
         )
 
-        # 5. Run the Team
-        # We pass the constructed context as the 'task'
-        result = await debate_team.run(task=initial_context)
+        debate_results = await debate_team.run(task=initial_context)
 
-        # 6. Extract Result
-        # The last message is from the Moderator (Structured JSON)
-        final_msg = result.messages[-1]
+        await termination.reset()
+        termination._max_messages = len(debators) + 1
 
         print("--- Debate ---")
-        for message in result.messages:
-            print(message)
+        debate = []
+        for message in debate_results.messages[1:]:
+            # print(message)
+            debate.append(message.content)
 
-        print("--- Conclusion ---")
-        print(final_msg)
+        closing_results = await debate_team.run(task="""
+            Now we transition to closing statements. 
+            Participants, please give your closing statement providing all details to justify your final score.
+        """)
+
+        print("--- Closing Statements ---")
+        closing_statements = []
+        for message in closing_results.messages:
+            # print(message)
+            closing_statements.append(message.content)
+
+        row_data = {
+            'Chapter': chapter,
+            'Verse': verse,
+            'Face_Annotation': face,
+            'Greek_Text': greek_text,
+            'Translation': translation,
+            "Debate": json.dumps(debate),
+            "Closing_Statements": json.dumps(closing_statements)
+        }
         
-        try:
-            # Pydantic structured output is returned as a serialized string in .content
-            data = json.loads(final_msg.content)
-            return data
-        except Exception as e:
-            print(f"❌ Error parsing debate output for {chapter} {verse}: {e}")
-            return None
+        return pd.DataFrame([row_data])
 
     async def process_interleaved_dataframe(self, df: pd.DataFrame):
         final_results = []
@@ -152,11 +192,13 @@ class Debate:
 
             # Run the async debate for this specific group
             consensus_data = await self.run_single_verse_debate(group_df)
-            
-            if consensus_data:
-                final_results.append(consensus_data)
+            print(consensus_data)
+            final_results.append(consensus_data)
 
-        return pd.DataFrame(final_results)
+        print("---------- FINAL RESULTS -----------")
+        print(final_results)
+
+        return pd.concat(final_results)
     
 async def run(df):
     debate = Debate()
