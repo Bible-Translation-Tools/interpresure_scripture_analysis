@@ -62,16 +62,6 @@ for _, row in df.iterrows():
 
 results = []
 
-
-
-async def run_analysis():
-    initial = await run_initial_analysis()
-    await run_debate(initial)
-
-async def run_debate(initial_analysis):
-    debate = Debate()
-    await debate.process_interleaved_dataframe(initial_analysis)
-
 async def run_initial_analysis():
     task_description = """
     Your task is to assign a score (1-10, where 10 is best) to the translation 
@@ -89,33 +79,19 @@ async def run_initial_analysis():
         }
     }
     
-    # linguists = [
-    #     LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-    #     LinguistAgent("GPT5_LINGUIST", "gpt-5", OPENAI_KEY, None, task_description, response_format)
-    # ]
-
     linguists = [
-        LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-        LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
+        LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+        LinguistAgent("GPT5_LINGUIST", "gpt-5.1", OPENAI_KEY, None, task_description, response_format)
     ]
+
+    # linguists = [
+    #     LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+    #     LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
+    # ]
 
     critic = CriticAgent()
 
-    config_list = [
-    {
-        "model": "gpt-4o", 
-        "api_key": os.environ.get("OPENAI_API_KEY") 
-    }
-    ]
-
-    llm_config_base = {
-        "config_list": config_list
-    }
-
-    user_proxy = UserProxyAgent(
-        name="Initiator"
-    )
-    for _, row in df.head(2).iterrows():  # using head(5) for quick demo; remove head() when full run
+    for _, row in df.iterrows():  # using head(5) for quick demo; remove head() when full run
     
         chapter = row['Chapter']
         verse = row['Verse']
@@ -126,7 +102,6 @@ async def run_initial_analysis():
         translated_text = NON_ENGLISH_TRANSLATION_DICT[(chapter, verse)]
         for linguist in linguists:
             analysis = LinguisticAnalysis(
-                llm_config_base, 
                 linguist.get_agent(), 
                 critic.get_agent()
             )
@@ -159,25 +134,29 @@ async def run_initial_analysis():
     return final_df
 
 
-# if __name__ == "__main__":
-#     #asyncio.run(run_commentary())
-    
-#     asyncio.run(run_analysis())
-
-async def run(df):
+async def run_debate(initial_analysis):
     debate = Debate()
-    results = await debate.process_interleaved_dataframe(df)
-
-    results.to_csv("debate_output.csv")
-
-    # with open("debate_output.json", "w") as fp:
-    #     fp.write(json.dumps(results))
+    return await debate.process_interleaved_dataframe(initial_analysis)
 
 from report.coalesce import coalesce_csvs
+async def run_analysis():
+    initial = await run_initial_analysis()
+    debate = await run_debate(initial)
+
+    os.makedirs("../out/", exist_ok=True)
+
+    opening_statement_file = "../out/opening_statements.csv"
+    debate_file = "../out/debate_output.csv"
+    final_output_file = "../out/final_output.json"
+
+    initial.to_csv(opening_statement_file)
+    debate.to_csv(debate_file)
+
+    coalesce_csvs(opening_statement_file, debate_file, final_output_file)
 
 if __name__ == "__main__":
     # df = pd.read_csv("debate_analysis_results.csv")
-    # asyncio.run(run(df))
+    asyncio.run(run_analysis())
 
     # coalesce_csvs("debate_analysis_results.csv", "debate_results.csv", "out.json")
-    coalesce_csvs("debate_analysis_results.csv", "debate_output.csv", "out2.json")
+    # coalesce_csvs("debate_analysis_results.csv", "debate_output.csv", "out2.json")

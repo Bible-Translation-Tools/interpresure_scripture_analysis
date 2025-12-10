@@ -6,14 +6,14 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 import os 
 
 key = os.getenv("OPENAI_API_KEY")
-CLIENT_MODEL = "gpt-5"
+CLIENT_MODEL = "gpt-5-mini"
 
 class CriticReview(BaseModel):
     """
     Structured output schema for the Linguistic Critic's review using a boolean.
     """
     accepted: bool = Field(..., description="True if the analysis is linguistically sound, False if revision is needed.")
-    reasoning: str = Field(..., description="The explanation for the decision. If 'accepted' is False, this must contain the revision instructions.")
+    reasoning: str = Field(..., description="A Markdown formatted explanation for the decision, in English. If 'accepted' is False, this must contain the revision instructions.")
 
 class CriticAgent:
 

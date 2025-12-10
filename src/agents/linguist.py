@@ -8,7 +8,7 @@ class LinguistReview(BaseModel):
     Structured output schema for the Linguistic Critic's review using a boolean.
     """
     score: int = Field(..., description="The score of the translation (1-10, where 10 is best).")
-    reasoning: str = Field(..., description="The explanation for the decision, in English and formatted in Markdown.")
+    reasoning: str = Field(..., description="A Markdown formatted explanation for the decision, in English.")
 
 
 class LinguistAgent:

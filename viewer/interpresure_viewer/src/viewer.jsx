@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Gavel
 } from 'lucide-react';
+import Markdown from 'react-markdown';
 
 // --- Color Scale Logic ---
 const getScoreColor = (score) => {
@@ -270,7 +271,9 @@ export default function BibleAnalyzer() {
              </span>
           </div>
           <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {currentModel.reasoning}
+            <Markdown>
+                {currentModel.reasoning}
+            </Markdown>
           </p>
         </div>
       </div>
@@ -285,7 +288,7 @@ export default function BibleAnalyzer() {
         {/* Debate Transcript */}
         <CollapsibleCard title="Debate Transcript" icon={MessageSquare} defaultOpen={true}>
           <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-            {debate.debate_transcript.map((turn, idx) => (
+            {debate.debate_transcript.filter((debate_item) => ( (debate_item.role !== "moderator" || debate_item.intervened === true)? true : false)).map((turn, idx) => (
               <div key={idx} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded-lg border border-blue-100' : ''}`}>
                 <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${turn.role === 'moderator' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
                   {turn.role === 'moderator' ? 'M' : turn.agent.charAt(0)}
@@ -298,7 +301,9 @@ export default function BibleAnalyzer() {
                     )}
                   </div>
                   <p className="text-sm text-gray-800">
-                    {turn.argument || turn.feedback}
+                    <Markdown>
+                        {turn.argument || turn.feedback}
+                    </Markdown>
                   </p>
                   {turn.violators && turn.violators.length > 0 && (
                     <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
@@ -323,7 +328,11 @@ export default function BibleAnalyzer() {
                     Final: {stmt.score}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 italic">"{stmt.statement}"</p>
+                <p className="text-sm text-gray-600">
+                    <Markdown>
+                        {stmt.statement}
+                    </Markdown>
+                </p>
               </div>
             ))}
           </div>
@@ -457,14 +466,16 @@ export default function BibleAnalyzer() {
                   
                   {/* Metadata if available */}
                   {selectedVerseData.rawAnalysis && (
+                    <div>
+                      <p className="text-gray-600 italic border-l-4 border-cyan-500 pl-4 py-1 mb-2">
+                        "{selectedVerseData.rawAnalysis.greek}"
+                      </p>
                      <div className="flex flex-wrap gap-2 text-xs mt-3">
-                        <span className="px-2 py-1 bg-gray-100 rounded text-gray-600 border border-gray-200">
-                           {selectedVerseData.rawAnalysis.greek}
-                        </span>
                         <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-100">
                            {selectedVerseData.rawAnalysis.annotation}
                         </span>
                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -476,7 +487,7 @@ export default function BibleAnalyzer() {
                       {selectedVerseData.debate && (
                         <div className={`p-5 rounded-xl border ${getScoreBadgeColor(selectedVerseData.debate.score)}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-bold uppercase tracking-wide opacity-80">Debate Consensus Score</span>
+                            <span className="text-sm font-bold uppercase tracking-wide opacity-80">Consensus Score</span>
                             <span className="text-3xl font-black">{selectedVerseData.debate.score}</span>
                           </div>
                           <div className="w-full bg-black/10 h-2 rounded-full overflow-hidden">

@@ -24,14 +24,14 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 class LinguistTurn(BaseModel):
     """The structured output for a linguist's turn in the debate."""
     agent_name: str = Field(description="The name of the linguist speaking.")
-    argument: str = Field(description="Your critique. Reference specific peers if agreeing/disagreeing. If this is a closing statement, include all specific details as to justify your score, even if the idea originated from a peer. This field should be a string containing Markdown formatted text.")
+    argument: str = Field(description="Your Markdown formatted critique, in English. Reference specific peers if agreeing/disagreeing. If this is a closing statement, include all specific details as to justify your score, even if the idea originated from a peer. This field should be a string containing Markdown formatted text.")
     proposed_score: int = Field(description="The score (1-10) you currently advocate for.")
 
 class ModeratorTurn(BaseModel):
     """The output from the moderator."""
     intervene: bool = Field(description="Whether the moderator is stepping in to intervene. False if there is no need to intervene.")
     violators: List[str] = Field(description="The names of the participants who require intervention. Empty if there is no need to intervene.")
-    feedback: str = Field(description="The feedback to give the debate participant if there is an intervention. Empty if there is no need to intervene.")
+    feedback: str = Field(description="Markdown formatted feedback to give the debate participant if there is an intervention. Empty if there is no need to intervene.")
 
 class DebateCommentator(BaseModel):
     """The final consensus output from the moderator."""
@@ -57,15 +57,15 @@ response_format = {
 
 class Debate:
     def __init__(self):
-        # self.linguists = [
-        #     LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-        #     LinguistAgent("GPT5_LINGUIST", "gpt-5", OPENAI_KEY, None, task_description, response_format)
-        # ]
-
         self.linguists = [
-            LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-            LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
+            LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+            LinguistAgent("GPT5_LINGUIST", "gpt-5.1", OPENAI_KEY, None, task_description, response_format)
         ]
+
+        # self.linguists = [
+        #     LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+        #     LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
+        # ]
 
         
 
@@ -103,7 +103,7 @@ class Debate:
 
         # Moderator must output the final JSON summary
         moderator_client = OpenAIChatCompletionClient(
-            model="gpt-4o",
+            model="gpt-5-mini",
             response_format=ModeratorTurn,
             key=OPENAI_KEY
         )

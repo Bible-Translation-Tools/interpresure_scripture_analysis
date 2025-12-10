@@ -15,10 +15,8 @@ def parse_critic_output(json_str: str) -> CriticReview | None:
 
 class LinguisticAnalysis:
     def __init__(self,
-                 llm_config,
                  linguist_agent,
                  critic_agent):
-        self.llm_config = llm_config
         self.linguist_agent = linguist_agent
         self.critic_agent = critic_agent
 
