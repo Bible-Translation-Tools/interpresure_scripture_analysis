@@ -98,7 +98,6 @@
 
 import pandas as pd
 import json
-import ast
 
 def safe_json_parse(json_str):
     """
@@ -109,7 +108,7 @@ def safe_json_parse(json_str):
         return []
     
     try:
-        # Step 1: Parse the outer layer (the list structure)
+        # Step 1: Parse the outer layer
         parsed_outer = json.loads(json_str)
         
         # Step 2: If it's a list, check if items are stringified JSON
@@ -118,10 +117,9 @@ def safe_json_parse(json_str):
             for item in parsed_outer:
                 if isinstance(item, str):
                     try:
-                        # Skip instructional strings (e.g., "Now we transition...")
+                        # Skip instructional strings
                         if "Now we transition" in item or item.strip() == "":
                             continue
-                        
                         cleaned_item = json.loads(item)
                         cleaned_list.append(cleaned_item)
                     except json.JSONDecodeError:
@@ -139,46 +137,36 @@ def coalesce_csvs(individual_path, debate_path, output_path):
     df_individual = pd.read_csv(individual_path)
     df_debate = pd.read_csv(debate_path)
 
-    # Normalize column names to lowercase to avoid KeyErrors
+    # Normalize column names
     df_debate.columns = [c.lower() for c in df_debate.columns]
-    # Ensure Individual CSV columns are Capitalized (matches your likely input)
     df_individual.columns = [c.capitalize() for c in df_individual.columns] 
 
     # 2. Extract Top-Level Metadata
     book_name = "Philemon"
+    # Get chapter from the first row if it exists
     chapter_num = int(df_individual['Chapter'].iloc[0]) if not df_individual.empty else 1
     
-    # 3. Merge Data by Verse
-    individual_verses = set(df_individual['Verse']) if 'Verse' in df_individual.columns else set()
-    debate_verses = set(df_debate['verse']) if 'verse' in df_debate.columns else set()
-    all_verses = sorted(individual_verses.union(debate_verses))
-
+    # 3. Process and Group Data
+    # We group by these three keys to ensure unique segments are not merged
+    group_cols = ['Verse', 'Greek_text', 'Face_annotation']
+    
+    # Fill NaN to avoid grouping errors
+    df_individual['Face_annotation'] = df_individual['Face_annotation'].fillna("Uncategorized")
+    
     analysis_list = []
 
-    for verse_num in all_verses:
-        # Filter rows
-        ind_rows = df_individual[df_individual['Verse'] == verse_num]
-        deb_rows = df_debate[df_debate['verse'] == verse_num]
+    # Iterate through each unique combination of Verse, Text, and Annotation
+    grouped = df_individual.groupby(group_cols, sort=False)
 
-        # Extract Verse Metadata
-        if not ind_rows.empty:
-            first_row = ind_rows.iloc[0]
-            greek = first_row.get('Greek_text', "")
-            annotation = first_row.get('Face_annotation', "")
-            notes = first_row.get('Notes', "")
-            translation = first_row.get('Translation', "")
-        elif not deb_rows.empty:
-            first_row = deb_rows.iloc[0]
-            greek = first_row.get('greek_text', "")
-            annotation = first_row.get('face_annotation', "")
-            notes = ""
-            translation = first_row.get('translation', "")
-        else:
-            greek, annotation, notes, translation = "", "", "", ""
+    for (verse_num, greek_text, annotation), ind_rows in grouped:
+        # Extract segment-specific metadata
+        first_row = ind_rows.iloc[0]
+        translation = first_row.get('Translation', "")
+        notes = first_row.get('Notes', "")
 
         inner_analysis = []
 
-        # -- PROCESS INDIVIDUAL --
+        # -- A. ADD INDIVIDUAL ANALYSES (One per model) --
         for _, row in ind_rows.iterrows():
             inner_analysis.append({
                 "type": "individual",
@@ -187,37 +175,43 @@ def coalesce_csvs(individual_path, debate_path, output_path):
                 "reasoning": row.get('Model_analysis', "")
             })
 
-        # -- PROCESS DEBATE --
+        # -- B. ADD DEBATE ANALYSIS (Matching this specific segment) --
+        # We strip whitespace to ensure matching isn't broken by a stray space
+        deb_rows = df_debate[
+            (df_debate['verse'] == verse_num) & 
+            (df_debate['greek_text'].str.strip() == greek_text.strip()) & 
+            (df_debate['face_annotation'].str.strip() == annotation.strip())
+        ]
+
         if not deb_rows.empty:
-            row = deb_rows.iloc[0]
+            deb_row = deb_rows.iloc[0]
             
-            # A. Parse Closing Statements (to derive final score)
-            closing_statements_data = safe_json_parse(row.get('closing_statements', '[]'))
-            
-            # Calculate Consensus Score: Min of closing scores
+            # Parse Closing Statements
+            closing_data = safe_json_parse(deb_row.get('closing_statements', '[]'))
             closing_scores = []
             formatted_closing = []
-            for s in closing_statements_data:
+            
+            for s in closing_data:
                 if isinstance(s, dict):
-                    if 'proposed_score' in s:
-                        closing_scores.append(int(s['proposed_score']))
+                    score = s.get('proposed_score')
+                    if score is not None:
+                        closing_scores.append(int(score))
                     formatted_closing.append({
                         "agent": s.get('agent_name', 'Unknown'),
                         "statement": s.get('argument', ""),
-                        "score": s.get('proposed_score')
+                        "score": score
                     })
             
-            final_score = min(closing_scores) if closing_scores else 0
+            final_consensus_score = min(closing_scores) if closing_scores else 0
 
-            # B. Parse Full Debate Transcript
-            debate_raw_data = safe_json_parse(row.get('debate', '[]'))
+            # Parse Debate Transcript
+            debate_raw_data = safe_json_parse(deb_row.get('debate', '[]'))
             transcript = []
 
             for turn in debate_raw_data:
                 if not isinstance(turn, dict):
                     continue
                 
-                # Handle Linguist Turn
                 if 'agent_name' in turn:
                     transcript.append({
                         "role": "linguist",
@@ -225,11 +219,7 @@ def coalesce_csvs(individual_path, debate_path, output_path):
                         "argument": turn.get('argument'),
                         "proposed_score": turn.get('proposed_score')
                     })
-                # Handle Moderator Turn
                 elif 'intervene' in turn:
-                    # Include if they intervened OR gave feedback (even if empty, sometimes useful to see checks)
-                    # We can filter out empty checks if desired, but here we keep "intervene: false" checks
-                    # to show the moderator was listening.
                     transcript.append({
                         "role": "moderator",
                         "agent": "Moderator",
@@ -240,16 +230,15 @@ def coalesce_csvs(individual_path, debate_path, output_path):
 
             inner_analysis.append({
                 "type": "debate",
-                "score": final_score,
-                # summary field removed
+                "score": final_consensus_score,
                 "debate_transcript": transcript,
                 "closing_statements": formatted_closing
             })
 
-        # Create Verse Object
+        # 4. Construct the unique Verse-Segment Object
         verse_obj = {
             "verse": int(verse_num),
-            "greek": greek,
+            "greek": greek_text,
             "translation": translation,
             "annotation": annotation,
             "notes": notes,
@@ -257,7 +246,7 @@ def coalesce_csvs(individual_path, debate_path, output_path):
         }
         analysis_list.append(verse_obj)
 
-    # 4. Construct Final JSON
+    # 5. Final JSON Structure
     final_json = {
         "book": book_name,
         "chapter": chapter_num,
@@ -265,8 +254,8 @@ def coalesce_csvs(individual_path, debate_path, output_path):
         "analysis": analysis_list
     }
 
-    # 5. Save
+    # 6. Save to file
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(final_json, f, indent=2, ensure_ascii=False)
     
-    print(f"Successfully created {output_path}")
+    print(f"Successfully coalesced {len(analysis_list)} analysis segments into {output_path}")
