@@ -26,6 +26,7 @@ class LinguistAgent:
             base_url=base_url,
             model_info=ModelInfo(vision=True, function_calling=True, json_output=True, family="unknown", structured_output=True),
             api_key=api_key,
+            timeout=60,
             response_format=response_format
         )
 

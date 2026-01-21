@@ -1,3 +1,4 @@
+import time
 import asyncio
 import pandas as pd
 import json
@@ -7,7 +8,9 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import os
 
+from agents.eli5 import Eli5Agent
 from agents.linguist import LinguistAgent
+from agents.secretary import SecretaryAgent
 
 load_dotenv()
 
@@ -59,8 +62,12 @@ class Debate:
     def __init__(self):
         self.linguists = [
             LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-            LinguistAgent("GPT5_LINGUIST", "gpt-5.1", OPENAI_KEY, None, task_description, response_format)
+            #LinguistAgent("GEMINI_LINGUIST", "gemini-2.5-pro", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
+            LinguistAgent("GPT5_LINGUIST", "gpt-5.2", OPENAI_KEY, None, task_description, response_format)
         ]
+
+        self.secretary = SecretaryAgent("SECRETARY", "gpt-5.2", OPENAI_KEY, None, response_format=response_format)
+        self.eli5agent = Eli5Agent("ELI5_SUMMARIZER", "gpt-5.2", OPENAI_KEY, None, response_format=response_format)
 
         # self.linguists = [
         #     LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
@@ -89,8 +96,11 @@ class Debate:
         initial_context = f"** Translation ** {translation}\n\n"
         initial_context += f"**Face Annotation:** {face}\n\n"
         initial_context += "### Initial Independent Analyses:\n"
+
+        opening_statements = []
         
         for _, row in group_df.iterrows():
+            opening_statements.append(row['Model_Analysis'])
             initial_context += (
                 f"- **{row['Agent_Name']}** (Initial Score: {row['Score']}): {row['Model_Analysis']}\n"
             )
@@ -164,6 +174,9 @@ class Debate:
             # print(message)
             closing_statements.append(message.content)
 
+        summary = await self.generate_summary(opening_statements, debate, closing_statements)
+        eli5 = await self.simplified_summary(summary)
+
         row_data = {
             'Chapter': chapter,
             'Verse': verse,
@@ -171,29 +184,52 @@ class Debate:
             'Greek_Text': greek_text,
             'Translation': translation,
             "Debate": json.dumps(debate),
-            "Closing_Statements": json.dumps(closing_statements)
+            "Closing_Statements": json.dumps(closing_statements),
+            "Summary": summary,
+            "ELI5": eli5
         }
         
         return pd.DataFrame([row_data])
 
+    async def generate_summary(self, opening_statements, debate, closing_statements):
+        summary = await self.secretary.summarize(opening_statements, debate, closing_statements)
+        return summary
+    
+    async def simplified_summary(self, summary):
+        summary = await self.eli5agent.eli5(summary)
+        return summary
+    
     async def process_interleaved_dataframe(self, df: pd.DataFrame):
+        num_linguists = len(self.linguists)
         final_results = []
 
         # GROUP BY: This automatically handles the "3 rows at a time" requirement 
         # regardless of whether the rows are perfectly sorted or mixed up.
         grouped_data = df.groupby(['Chapter', 'Verse'])
 
-        for (chapter, verse), group_df in grouped_data:
-            
-            # Validation: Ensure we actually have 3 agents for this verse
-            if len(group_df) != 2:
-                print(f"⚠️ Skipping {chapter} {verse}: Expected 2 analyses, found {len(group_df)}")
-                continue
+        async def run(group_df):
+            try:
+                # Run the async debate for this specific group
+                time.sleep(3)
+                consensus_data = await self.run_single_verse_debate(group_df)
+                print(consensus_data)
+                final_results.append(consensus_data)
+            except Exception as e:
+                print("Error! rate limit, trying again...", e)
+                time.sleep(61 * 5)
+                print("INFO: retrying")
+                await run(group_df)
 
-            # Run the async debate for this specific group
-            consensus_data = await self.run_single_verse_debate(group_df)
-            print(consensus_data)
-            final_results.append(consensus_data)
+        for (chapter, verse), group_df in grouped_data:
+            if len(group_df) != num_linguists:
+                print(f"⚠️ Skipping {chapter} {verse}: Expected 2 analyses, found {len(group_df)}")
+                verse_group = group_df.groupby(group_df.index // num_linguists)
+                for _, df in verse_group:
+                    await run(df)
+                
+            else:
+                await run(group_df)
+            
 
         print("---------- FINAL RESULTS -----------")
         print(final_results)

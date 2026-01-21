@@ -30,7 +30,7 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 LANGUAGE = "en"
 book_number = 58
 book = "PHM"
-filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
+filename = f"../lang/{LANGUAGE}/NASB-{book_number}-{book}.usfm"
 
 # Parse a file
 verses = parse_usfm_file(filename)
@@ -45,7 +45,7 @@ verses = parser.parse(content)
 # --- 1. Load Ground Truth Data ---
 # This data file was generated in the previous step
 try:
-    df = pd.read_csv("../philemon_face_ground_truth.csv")
+    df = pd.read_csv("../interpresure/philemon_face_ground_truth.csv")
 except FileNotFoundError:
     print("Error: philemon_face_ground_truth.csv not found. Please ensure the data prep step was executed.")
     exit()
@@ -81,7 +81,7 @@ async def run_initial_analysis():
     
     linguists = [
         LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-        LinguistAgent("GPT5_LINGUIST", "gpt-5.1", OPENAI_KEY, None, task_description, response_format)
+        LinguistAgent("GPT5_LINGUIST", "gpt-5.2", OPENAI_KEY, None, task_description, response_format)
     ]
 
     # linguists = [
@@ -140,14 +140,17 @@ async def run_debate(initial_analysis):
 
 from report.coalesce import coalesce_csvs
 async def run_analysis():
-    initial = await run_initial_analysis()
-    debate = await run_debate(initial)
-
     os.makedirs("../out/", exist_ok=True)
 
     opening_statement_file = "../out/opening_statements.csv"
     debate_file = "../out/debate_output.csv"
     final_output_file = "../out/final_output.json"
+
+
+    initial = await run_initial_analysis()
+    # initial = pd.read_csv(opening_statement_file)
+    debate = await run_debate(initial)
+
 
     initial.to_csv(opening_statement_file)
     debate.to_csv(debate_file)
