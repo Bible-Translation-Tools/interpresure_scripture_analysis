@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Upload, 
   FileText, 
@@ -11,7 +11,8 @@ import {
   Users, 
   User, 
   MessageSquare,
-  Gavel
+  Gavel,
+  Layers
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 
@@ -123,10 +124,16 @@ const CollapsibleCard = ({ title, icon: Icon, children, defaultOpen = false, sco
 
 export default function BibleAnalyzer() {
   const [usfmData, setUsfmData] = useState(null);
-  const [analysisData, setAnalysisData] = useState(null); // Changed from csvData
+  const [analysisData, setAnalysisData] = useState(null); 
   const [activeChapter, setActiveChapter] = useState(1);
   const [activeVerse, setActiveVerse] = useState(null); // { c, v }
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); // For multiple analyses per verse
   const [error, setError] = useState(null);
+
+  // Reset variant index when verse changes
+  useEffect(() => {
+    setSelectedVariantIndex(0);
+  }, [activeVerse]);
 
   // --- Handlers ---
 
@@ -164,20 +171,25 @@ export default function BibleAnalyzer() {
         }
 
         const chapter = json.chapter;
-        const newMap = { ...analysisData }; // Preserve existing data if any
+        const newMap = { ...analysisData }; // Preserve existing data
 
         if (!newMap[chapter]) newMap[chapter] = {};
 
         // Map the array to a verse-lookup object
+        // Note: Each verse can now have an ARRAY of analyses
         json.analysis.forEach(item => {
           if (item.verse) {
-            newMap[chapter][item.verse] = item;
+            if (!newMap[chapter][item.verse]) {
+              newMap[chapter][item.verse] = [];
+            }
+            newMap[chapter][item.verse].push(item);
           }
         });
 
         setAnalysisData(newMap);
         setError(null);
       } catch (err) {
+        console.error(err);
         setError("Failed to parse JSON file. Ensure it matches the schema.");
       }
     };
@@ -211,14 +223,27 @@ export default function BibleAnalyzer() {
       .sort((a, b) => a - b)
       .map(vNum => {
         const text = chData[vNum];
-        // Check for Analysis match
-        const verseData = analysisData?.[activeChapter]?.[vNum];
-        const debate = getDebateInfo(verseData);
+        // Check for Analysis match (Array of variants)
+        const variants = analysisData?.[activeChapter]?.[vNum] || [];
+        
+        // Find the LOWEST debate score among all variants for this verse
+        let minScore = null;
+        
+        if (variants.length > 0) {
+          const scores = variants
+            .map(v => getDebateInfo(v)?.score)
+            .filter(s => s != null && !isNaN(s));
+            
+          if (scores.length > 0) {
+            minScore = Math.min(...scores);
+          }
+        }
         
         return {
           vNum,
           text,
-          debateScore: debate ? debate.score : null
+          debateScore: minScore,
+          variantCount: variants.length
         };
       });
   }, [usfmData, analysisData, activeChapter]);
@@ -227,16 +252,18 @@ export default function BibleAnalyzer() {
     if (!activeVerse || !usfmData) return null;
     const { c, v } = activeVerse;
     
-    const rawAnalysis = analysisData?.[c]?.[v];
+    const variants = analysisData?.[c]?.[v] || [];
+    const currentVariant = variants[selectedVariantIndex] || null;
 
     return {
       c, v,
       text: usfmData[c]?.[v],
-      rawAnalysis,
-      debate: getDebateInfo(rawAnalysis),
-      individuals: getIndividualAnalyses(rawAnalysis)
+      variants, // All variants for dropdown
+      currentVariant, // Selected variant object
+      debate: currentVariant ? getDebateInfo(currentVariant) : null,
+      individuals: currentVariant ? getIndividualAnalyses(currentVariant) : []
     };
-  }, [activeVerse, usfmData, analysisData]);
+  }, [activeVerse, usfmData, analysisData, selectedVariantIndex]);
 
 
   // --- Sub-components for Right Panel ---
@@ -244,9 +271,14 @@ export default function BibleAnalyzer() {
   const IndividualAnalysisSection = ({ models }) => {
     const [selectedModelIndex, setSelectedModelIndex] = useState(0);
 
+    // Reset internal state when models change
+    useEffect(() => {
+      setSelectedModelIndex(0);
+    }, [models]);
+
     if (!models || models.length === 0) return <p className="text-gray-500 italic">No individual models found.</p>;
 
-    const currentModel = models[selectedModelIndex];
+    const currentModel = models[selectedModelIndex] || models[0];
 
     return (
       <div className="space-y-4">
@@ -287,7 +319,7 @@ export default function BibleAnalyzer() {
       <div className="space-y-2">
         {/* Debate Transcript */}
         <CollapsibleCard title="Debate Transcript" icon={MessageSquare} defaultOpen={true}>
-          <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+          <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin">
             {debate.debate_transcript.filter((debate_item) => ( (debate_item.role !== "moderator" || debate_item.intervened === true)? true : false)).map((turn, idx) => (
               <div key={idx} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded-lg border border-blue-100' : ''}`}>
                 <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${turn.role === 'moderator' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
@@ -300,8 +332,8 @@ export default function BibleAnalyzer() {
                        <span className="text-xs font-mono bg-gray-100 px-1 rounded">Score: {turn.proposed_score}</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-800">
-                    <Markdown>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                     <Markdown>
                         {turn.argument || turn.feedback}
                     </Markdown>
                   </p>
@@ -328,11 +360,11 @@ export default function BibleAnalyzer() {
                     Final: {stmt.score}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600">
-                    <Markdown>
-                        {stmt.statement}
-                    </Markdown>
-                </p>
+                    <p className="text-sm text-gray-600">
+                        <Markdown>
+                            {stmt.statement}
+                        </Markdown>
+                    </p>
               </div>
             ))}
           </div>
@@ -415,7 +447,7 @@ export default function BibleAnalyzer() {
 
             {/* Verse List */}
             <div className="flex-1 overflow-y-auto p-6 space-y-3">
-              {currentVerses.map(({ vNum, text, debateScore }) => {
+              {currentVerses.map(({ vNum, text, debateScore, variantCount }) => {
                 const bgColorClass = debateScore ? getScoreColor(debateScore) : 'bg-white border border-gray-100 hover:border-blue-300';
                 const isSelected = activeVerse?.c === activeChapter && activeVerse?.v === vNum;
 
@@ -433,9 +465,18 @@ export default function BibleAnalyzer() {
                       <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 text-sm font-bold opacity-70">
                         {vNum}
                       </span>
-                      <p className={`text-lg leading-relaxed ${debateScore ? '' : 'text-gray-700'}`}>
-                        {text}
-                      </p>
+                      <div className="flex-1">
+                        <p className={`text-lg leading-relaxed ${debateScore ? '' : 'text-gray-700'}`}>
+                          {text}
+                        </p>
+                        {variantCount > 1 && (
+                          <div className="mt-2 flex items-center gap-1 text-xs opacity-60 font-medium">
+                            <Layers size={12} />
+                            {variantCount} analyses available
+                          </div>
+                        )}
+                      </div>
+                      
                       {debateScore && (
                         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold backdrop-blur-sm">
                           {debateScore}
@@ -460,34 +501,60 @@ export default function BibleAnalyzer() {
                   <h2 className="text-2xl font-serif text-gray-800 mb-2">
                     Chapter {selectedVerseData.c}, Verse {selectedVerseData.v}
                   </h2>
-                  <p className="text-gray-600 italic border-l-4 border-indigo-500 pl-4 py-1 mb-2">
+                  <p className="text-gray-600 italic border-l-4 border-indigo-500 pl-4 py-1 mb-4">
                     "{selectedVerseData.text}"
                   </p>
                   
-                  {/* Metadata if available */}
-                  {selectedVerseData.rawAnalysis && (
+                  {/* Analysis Variant Selector */}
+                  {selectedVerseData.variants.length > 0 && (
+                    <div className="mt-4 mb-4">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                        <span>Select Analysis Variant</span>
+                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-normal">
+                          {selectedVerseData.variants.length} Available
+                        </span>
+                      </label>
+                      <select 
+                        value={selectedVariantIndex} 
+                        onChange={(e) => setSelectedVariantIndex(parseInt(e.target.value))}
+                        className="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm"
+                      >
+                        {selectedVerseData.variants.map((v, idx) => {
+                          const score = getDebateInfo(v)?.score;
+                          return (
+                            <option key={idx} value={idx}>
+                              {v.annotation} — {v.greek.substring(0, 20)}{v.greek.length > 20 ? '...' : ''} {score ? `(Score: ${score})` : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Metadata for current variant */}
+                  {selectedVerseData.currentVariant && (
                     <div>
                       <p className="text-gray-600 italic border-l-4 border-cyan-500 pl-4 py-1 mb-2">
-                        "{selectedVerseData.rawAnalysis.greek}"
+                        "{selectedVerseData.currentVariant.greek}"
                       </p>
-                     <div className="flex flex-wrap gap-2 text-xs mt-3">
+                      <div className="flex flex-wrap gap-2 text-xs mt-3">
                         <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-100">
-                           {selectedVerseData.rawAnalysis.annotation}
+                           {selectedVerseData.currentVariant.annotation}
                         </span>
-                     </div>
-                    </div>
+                      </div>
+                      </div>
                   )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-                  {selectedVerseData.rawAnalysis ? (
+                  {selectedVerseData.currentVariant ? (
                     <div className="space-y-6">
                       
                       {/* Top Score Card (Debate Score) */}
                       {selectedVerseData.debate && (
                         <div className={`p-5 rounded-xl border ${getScoreBadgeColor(selectedVerseData.debate.score)}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-bold uppercase tracking-wide opacity-80">Consensus Score</span>
+                            <span className="text-sm font-bold uppercase tracking-wide opacity-80">Debate Consensus Score</span>
                             <span className="text-3xl font-black">{selectedVerseData.debate.score}</span>
                           </div>
                           <div className="w-full bg-black/10 h-2 rounded-full overflow-hidden">
