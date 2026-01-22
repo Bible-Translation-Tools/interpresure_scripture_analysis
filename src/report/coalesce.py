@@ -235,6 +235,15 @@ def coalesce_csvs(individual_path, debate_path, output_path):
                 "closing_statements": formatted_closing
             })
 
+            # Parse Closing Statements
+            (summary, eli5) = safe_json_parse(deb_row.get('summary', '')), safe_json_parse(deb_row.get('eli5', ''))
+
+            inner_analysis.append({
+                "type": "conclusion",
+                "summary": summary.get('summary'),
+                "simplified_summary": eli5.get('summary'),
+            })
+
         # 4. Construct the unique Verse-Segment Object
         verse_obj = {
             "verse": int(verse_num),

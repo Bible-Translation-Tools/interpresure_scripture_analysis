@@ -175,6 +175,27 @@
         "debate_transcript",
         "closing_statements"
       ]
+    },
+    "conclusion": {
+        "type": "object",
+        "properties": {
+            "type": {
+                "const": "conclusion"
+            },
+            "summary": {
+                "type": "string",
+                "description": "A final summary detailing the linguistic conclusion of the analysis."
+            },
+            "simplified_summary": {
+                "type": "string",
+                "description": "A plain language version of the final summary."
+            }
+        },
+        "required": [
+            "type",
+            "summary",
+            "simplified_summary"
+        ]
     }
   }
 }

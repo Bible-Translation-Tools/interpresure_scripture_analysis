@@ -3,12 +3,28 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_core.models import ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
+class SecretaryResponse(BaseModel):
+    agent_name: str = Field(description="The name of the speaker.")
+    summary: str = Field(description="Your Markdown formatted summary presented as a linguistic analysis, in English.")
+
 class SecretaryAgent:
+
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "linguist_review",
+            "schema": SecretaryResponse.model_json_schema()
+        }
+    }
 
     def __init__(self, name, model_name, api_key, base_url, task_description="", response_format="text"):
         self.name = name
         self.model_name = model_name
-        self.system_message =f"You are {name}, a secretary summarizing a linguistics debate." + task_description
+        self.system_message = f"""
+        You are {name}, a secretary summarizing a linguistics debate."
+        Do not make reference to a debate or call your summary a conclusion (final conclusion, bottom line, etc), your summary is going to be given as a report to a translation team. 
+        If you need to reference the debate, refer to it as the linguistic analysis and the interlocutors/moderator as linguistic analysts.
+        """
     
         self.client = OpenAIChatCompletionClient(
             api_type="openai",
@@ -17,7 +33,7 @@ class SecretaryAgent:
             model_info=ModelInfo(vision=True, function_calling=True, json_output=True, family="unknown", structured_output=True),
             api_key=api_key,
             timeout=60,
-            response_format=response_format
+            response_format=self.response_format
         )
 
         self.agent = AssistantAgent(

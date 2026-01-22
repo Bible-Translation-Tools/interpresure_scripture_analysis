@@ -30,7 +30,8 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 LANGUAGE = "en"
 book_number = 58
 book = "PHM"
-filename = f"../lang/{LANGUAGE}/NASB-{book_number}-{book}.usfm"
+
+filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 
 # Parse a file
 verses = parse_usfm_file(filename)
@@ -140,11 +141,11 @@ async def run_debate(initial_analysis):
 
 from report.coalesce import coalesce_csvs
 async def run_analysis():
-    os.makedirs("../out/", exist_ok=True)
+    os.makedirs(f"../out/{LANGUAGE}/{book}/", exist_ok=True)
 
-    opening_statement_file = "../out/opening_statements.csv"
-    debate_file = "../out/debate_output.csv"
-    final_output_file = "../out/final_output.json"
+    opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_opening_statements.csv"
+    debate_file = f"../out/{LANGUAGE}/{book}/{book}_debate_output.csv"
+    final_output_file = f"../out/{LANGUAGE}/{book}/{book}_final_output.json"
 
 
     initial = await run_initial_analysis()

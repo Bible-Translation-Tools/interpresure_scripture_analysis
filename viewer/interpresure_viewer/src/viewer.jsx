@@ -12,9 +12,29 @@ import {
   User, 
   MessageSquare,
   Gavel,
-  Layers
+  Layers,
+  AlignLeft,
+  Settings
 } from 'lucide-react';
 import Markdown from 'react-markdown';
+
+// --- Markdown Styling Components ---
+// Explicitly define styles to override Tailwind's default reset
+const markdownComponents = {
+  ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2" {...props} />,
+  ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+  li: ({node, ...props}) => <li className="pl-1" {...props} />,
+  h1: ({node, ...props}) => <h1 className="text-xl font-bold text-gray-900 mt-4 mb-2" {...props} />,
+  h2: ({node, ...props}) => <h2 className="text-lg font-bold text-gray-900 mt-3 mb-2" {...props} />,
+  h3: ({node, ...props}) => <h3 className="text-base font-bold text-gray-900 mt-2 mb-1" {...props} />,
+  h4: ({node, ...props}) => <h4 className="text-sm font-bold text-gray-900 mt-2 mb-1" {...props} />,
+  p: ({node, ...props}) => <p className="mb-1 last:mb-0 leading-relaxed" {...props} />,
+  p: ({children}) => <p style={{ margin: 1, padding: 1 }}>{children}</p>,
+  strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+  em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />,
+  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 my-2" {...props} />,
+  code: ({node, ...props}) => <code className="bg-gray-100 rounded px-1 py-0.5 text-xs font-mono text-gray-800" {...props} />,
+};
 
 // --- Color Scale Logic ---
 const getScoreColor = (score) => {
@@ -127,12 +147,14 @@ export default function BibleAnalyzer() {
   const [analysisData, setAnalysisData] = useState(null); 
   const [activeChapter, setActiveChapter] = useState(1);
   const [activeVerse, setActiveVerse] = useState(null); // { c, v }
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); // For multiple analyses per verse
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0); 
+  const [showAdvanced, setShowAdvanced] = useState(false); // Toggle for simplified vs advanced view
   const [error, setError] = useState(null);
 
-  // Reset variant index when verse changes
+  // Reset UI state when verse changes
   useEffect(() => {
     setSelectedVariantIndex(0);
+    setShowAdvanced(false); // Default to simplified view on verse change
   }, [activeVerse]);
 
   // --- Handlers ---
@@ -176,7 +198,6 @@ export default function BibleAnalyzer() {
         if (!newMap[chapter]) newMap[chapter] = {};
 
         // Map the array to a verse-lookup object
-        // Note: Each verse can now have an ARRAY of analyses
         json.analysis.forEach(item => {
           if (item.verse) {
             if (!newMap[chapter][item.verse]) {
@@ -201,6 +222,11 @@ export default function BibleAnalyzer() {
   const getDebateInfo = (verseAnalysis) => {
     if (!verseAnalysis || !verseAnalysis.analysis) return null;
     return verseAnalysis.analysis.find(a => a.type === 'debate');
+  };
+
+  const getConclusionInfo = (verseAnalysis) => {
+    if (!verseAnalysis || !verseAnalysis.analysis) return null;
+    return verseAnalysis.analysis.find(a => a.type === 'conclusion');
   };
 
   const getIndividualAnalyses = (verseAnalysis) => {
@@ -261,7 +287,8 @@ export default function BibleAnalyzer() {
       variants, // All variants for dropdown
       currentVariant, // Selected variant object
       debate: currentVariant ? getDebateInfo(currentVariant) : null,
-      individuals: currentVariant ? getIndividualAnalyses(currentVariant) : []
+      individuals: currentVariant ? getIndividualAnalyses(currentVariant) : [],
+      conclusion: currentVariant ? getConclusionInfo(currentVariant) : null
     };
   }, [activeVerse, usfmData, analysisData, selectedVariantIndex]);
 
@@ -302,8 +329,8 @@ export default function BibleAnalyzer() {
                Score: {currentModel.score}
              </span>
           </div>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            <Markdown>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            <Markdown components={markdownComponents}>
                 {currentModel.reasoning}
             </Markdown>
           </p>
@@ -332,8 +359,8 @@ export default function BibleAnalyzer() {
                        <span className="text-xs font-mono bg-gray-100 px-1 rounded">Score: {turn.proposed_score}</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                     <Markdown>
+                  <p className="text-sm text-gray-800">
+                    <Markdown components={markdownComponents}>
                         {turn.argument || turn.feedback}
                     </Markdown>
                   </p>
@@ -360,11 +387,11 @@ export default function BibleAnalyzer() {
                     Final: {stmt.score}
                   </span>
                 </div>
-                    <p className="text-sm text-gray-600">
-                        <Markdown>
-                            {stmt.statement}
-                        </Markdown>
-                    </p>
+                <p className="text-sm text-gray-600">
+                    <Markdown components={markdownComponents}>
+                        {stmt.statement}
+                    </Markdown>
+                </p>
               </div>
             ))}
           </div>
@@ -534,15 +561,15 @@ export default function BibleAnalyzer() {
                   {/* Metadata for current variant */}
                   {selectedVerseData.currentVariant && (
                     <div>
-                      <p className="text-gray-600 italic border-l-4 border-cyan-500 pl-4 py-1 mb-2">
-                        "{selectedVerseData.currentVariant.greek}"
-                      </p>
-                      <div className="flex flex-wrap gap-2 text-xs mt-3">
+                        <p className="text-gray-600 italic border-l-4 border-cyan-500 pl-4 py-1 mb-2">
+                            "{selectedVerseData.currentVariant.greek}"
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs mt-3">
                         <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-100">
-                           {selectedVerseData.currentVariant.annotation}
+                            {selectedVerseData.currentVariant.annotation}
                         </span>
-                      </div>
-                      </div>
+                     </div>
+                     </div>
                   )}
                 </div>
 
@@ -566,15 +593,59 @@ export default function BibleAnalyzer() {
                         </div>
                       )}
 
-                      {/* Card 1: Individual Analysis */}
-                      <CollapsibleCard title="Individual Analysis" icon={User}>
-                        <IndividualAnalysisSection models={selectedVerseData.individuals} />
-                      </CollapsibleCard>
+                      {/* Advanced Options Toggle */}
+                      <div className="flex items-center justify-end">
+                        <button 
+                          onClick={() => setShowAdvanced(!showAdvanced)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${showAdvanced ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                          <Settings size={14} />
+                          {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}
+                        </button>
+                      </div>
 
-                      {/* Card 2: Debate Analysis */}
-                      <CollapsibleCard title="Debate Analysis" icon={Users} defaultOpen={true}>
-                         <DebateAnalysisSection debate={selectedVerseData.debate} />
-                      </CollapsibleCard>
+                      {/* View Logic */}
+                      {!showAdvanced ? (
+                        // Simplified View
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <AlignLeft size={16} />
+                            Analysis Summary
+                          </h3>
+                          <div className="prose prose-sm prose-blue max-w-none text-gray-800 leading-relaxed">
+                            <Markdown components={markdownComponents}>
+                                {selectedVerseData.conclusion?.simplified_summary || (
+                                <p className="text-gray-400 italic">No simplified summary available.</p>
+                                )}
+                            </Markdown>
+                          </div>
+                        </div>
+                      ) : (
+                        // Advanced View (All Collapsible Cards)
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                          
+                          {/* Card 1: Full Summary */}
+                          <CollapsibleCard title="Full Summary" icon={AlignLeft} defaultOpen={true}>
+                            <div className="prose prose-sm prose-blue max-w-none text-gray-700">
+                                <Markdown components={markdownComponents}>
+                                    {selectedVerseData.conclusion?.summary || (
+                                        <p className="text-gray-400 italic">No full summary available.</p>
+                                    )}
+                                </Markdown>
+                            </div>
+                          </CollapsibleCard>
+
+                          {/* Card 2: Individual Analysis */}
+                          <CollapsibleCard title="Individual Analysis" icon={User}>
+                            <IndividualAnalysisSection models={selectedVerseData.individuals} />
+                          </CollapsibleCard>
+
+                          {/* Card 3: Debate Analysis */}
+                          <CollapsibleCard title="Debate Analysis" icon={Users}>
+                             <DebateAnalysisSection debate={selectedVerseData.debate} />
+                          </CollapsibleCard>
+                        </div>
+                      )}
 
                     </div>
                   ) : (

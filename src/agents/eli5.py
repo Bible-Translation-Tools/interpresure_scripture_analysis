@@ -3,7 +3,20 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_core.models import ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
+class Eli5Response(BaseModel):
+    """The structured output for a simplified summary."""
+    agent_name: str = Field(description="The name of the speaker.")
+    summary: str = Field(description="Your Markdown formatted summary, in simple English.")
+
 class Eli5Agent:
+
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "linguist_review",
+            "schema": Eli5Response.model_json_schema()
+        }
+    }
 
     def __init__(self, name, model_name, api_key, base_url, task_description="", response_format="text"):
         self.name = name
@@ -17,7 +30,7 @@ class Eli5Agent:
             model_info=ModelInfo(vision=True, function_calling=True, json_output=True, family="unknown", structured_output=True),
             api_key=api_key,
             timeout=60,
-            response_format=response_format
+            response_format=self.response_format
         )
 
         self.agent = AssistantAgent(
@@ -36,12 +49,12 @@ class Eli5Agent:
 
     def _construct_prompt(self, summary):
         prompt = (
-            f"ROLE: You are communicating a linguistic debate summary in plain English so that even a middle school student could understand what was said.\n"
+            f"ROLE: You are communicating a linguistic analysis in plain English so that even a middle school student could understand what was said.\n"
             "---------------------------------------------------------------------------------\n"
             f"{summary}"
             "---------------------------------------------------------------------------------\n"
             f"TASK:"
-            "Communicate everything that was said in the debate summary in simple terms."
+            "Communicate everything that was said in the analysis in simple terms."
             "Format your summary in Markdown."
         )
         
