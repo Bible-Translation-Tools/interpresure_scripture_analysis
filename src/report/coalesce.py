@@ -99,6 +99,8 @@
 import pandas as pd
 import json
 
+from data.interpresure import Interpresure
+
 def safe_json_parse(json_str):
     """
     Parses a string that might be a JSON list, a JSON object, 
@@ -132,37 +134,47 @@ def safe_json_parse(json_str):
     except (json.JSONDecodeError, TypeError):
         return []
 
-def coalesce_csvs(individual_path, debate_path, output_path):
+def coalesce_csvs(
+        individual_path, 
+        debate_path, 
+        output_path, 
+        interpresure: Interpresure, 
+        book: str, 
+        topic: str,
+        translation_title: str,
+        translation_language: str,
+        translation_usfm: str
+):
+    annotation_columns = interpresure.get_topic_columns(topic)
+
     # 1. Load the CSVs
     df_individual = pd.read_csv(individual_path)
+    df_individual.columns = df_individual.columns.str.lower()
     df_debate = pd.read_csv(debate_path)
-
-    # Normalize column names
-    df_debate.columns = [c.lower() for c in df_debate.columns]
-    df_individual.columns = [c.capitalize() for c in df_individual.columns] 
+    df_debate.columns = df_debate.columns.str.lower()
 
     # 2. Extract Top-Level Metadata
-    book_name = "Philemon"
+    book_name = book
     # Get chapter from the first row if it exists
-    chapter_num = int(df_individual['Chapter'].iloc[0]) if not df_individual.empty else 1
+    chapter_num = int(df_individual['chapter'].iloc[0]) if not df_individual.empty else 1
     
     # 3. Process and Group Data
     # We group by these three keys to ensure unique segments are not merged
-    group_cols = ['Verse', 'Greek_text', 'Face_annotation']
+    group_cols = ['verse', 'greek_text'] + annotation_columns
     
-    # Fill NaN to avoid grouping errors
-    df_individual['Face_annotation'] = df_individual['Face_annotation'].fillna("Uncategorized")
+    for col in annotation_columns:
+        df_individual[col] = df_individual[col].fillna("Uncategorized")
     
     analysis_list = []
 
     # Iterate through each unique combination of Verse, Text, and Annotation
     grouped = df_individual.groupby(group_cols, sort=False)
 
-    for (verse_num, greek_text, annotation), ind_rows in grouped:
+    for (verse_num, greek_text, *annotations), ind_rows in grouped:
         # Extract segment-specific metadata
         first_row = ind_rows.iloc[0]
-        translation = first_row.get('Translation', "")
-        notes = first_row.get('Notes', "")
+        translation = first_row.get('translation', "")
+        notes = first_row.get('notes', "")
 
         inner_analysis = []
 
@@ -170,18 +182,24 @@ def coalesce_csvs(individual_path, debate_path, output_path):
         for _, row in ind_rows.iterrows():
             inner_analysis.append({
                 "type": "individual",
-                "model": row.get("Model", "Unknown"),
-                "score": int(row.get('Score', 0)),
-                "reasoning": row.get('Model_analysis', "")
+                "model": row.get("model", "Unknown"),
+                "score": int(row.get('score', 0)),
+                "reasoning": row.get('model_analysis', "")
             })
 
         # -- B. ADD DEBATE ANALYSIS (Matching this specific segment) --
         # We strip whitespace to ensure matching isn't broken by a stray space
-        deb_rows = df_debate[
-            (df_debate['verse'] == verse_num) & 
-            (df_debate['greek_text'].str.strip() == greek_text.strip()) & 
-            (df_debate['face_annotation'].str.strip() == annotation.strip())
-        ]
+        # 1. Start with your base filters
+        mask = (df_debate['verse'] == verse_num) & \
+            (df_debate['greek_text'].str.strip() == greek_text.strip())
+
+        # 2. Dynamically add filters for every annotation column
+        for col, val in zip(annotation_columns, annotations):
+            # Ensure we handle strings for .strip() if necessary, 
+            # otherwise a direct comparison (df_debate[col] == val) is safer
+            mask &= (df_debate[col].astype(str).str.strip() == str(val).strip())
+
+        deb_rows = df_debate[mask]
 
         if not deb_rows.empty:
             deb_row = deb_rows.iloc[0]
@@ -249,7 +267,7 @@ def coalesce_csvs(individual_path, debate_path, output_path):
             "verse": int(verse_num),
             "greek": greek_text,
             "translation": translation,
-            "annotation": annotation,
+            "annotations": [{"type": col, "annotation": ann } for (col, ann) in zip(annotation_columns, annotations)],
             "notes": notes,
             "analysis": inner_analysis
         }
@@ -259,8 +277,18 @@ def coalesce_csvs(individual_path, debate_path, output_path):
     final_json = {
         "book": book_name,
         "chapter": chapter_num,
-        "category": "Pauline Epistles",
-        "analysis": analysis_list
+        "pragmatic_goal": {
+            "type": topic,
+            "title": interpresure.get_topic_title(topic),
+            "goal": interpresure.get_topic_goal(topic),
+            "description": interpresure.get_topic_description(topic)
+        },
+        "analysis": analysis_list,
+        "translation": {
+            "title": translation_title,
+            "language": translation_language,
+            "usfm": translation_usfm
+        }
     }
 
     # 6. Save to file

@@ -17,7 +17,7 @@ class CriticReview(BaseModel):
 
 class CriticAgent:
 
-    def __init__(self):
+    def __init__(self, critic_model):
         self.name = "LINGUISTIC_CRITIC"
         self.system_message="""
         You are the Linguistic Critic. Your role is to rigorously review a submitted translation analysis.

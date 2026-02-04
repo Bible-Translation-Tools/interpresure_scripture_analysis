@@ -39,15 +39,15 @@ class LinguistAgent:
     def get_agent(self):
         return self.agent
 
-    def _construct_prompt(self, chapter, verse, greek, pragmatic_goal, notes, translation):
+    def _construct_prompt(self, chapter, verse, greek, pragmatic_annotations, notes, translation):
         prompt = (
             f"ROLE: You are performing a cross-lingual pragmatic analysis.\n"
             "---------------------------------------------------------------------------------\n"
             f"GROUND TRUTH ANALYSIS:\n"
-            f"1. Context: Philemon {chapter}:{verse}\n"
-            f"2. Greek Text: \"{greek}\"\n"
-            f"3. Pragmatic Goal ('Face'): \"{pragmatic_goal}\"\n"
-            f"4. Expert Rationale (The Constraint): \"{notes}\"\n\n"
+            f"1. Greek Text: \"{greek}\"\n"
+            f"2. Expert Annotations: "
+            f"\"{pragmatic_annotations}\"\n"
+            f"3. Expert Notes: \"{notes}\"\n\n"
             "TASK:\n"
             f"Evaluate the following translation against the Greek pragmatic goal and rationale.\n"
             f"Translation: \"{translation}\"\n\n"

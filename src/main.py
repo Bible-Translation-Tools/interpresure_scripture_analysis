@@ -10,6 +10,7 @@ from autogen_core.models import ModelInfo
 from autogen_agentchat.base import TerminationCondition, TerminatedException
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
 from autogen_agentchat.messages import StopMessage
+from data.interpresure import Interpresure
 from teams.debate import Debate
 from teams.analysis import LinguisticAnalysis
 from agents.critic import CriticAgent
@@ -27,9 +28,12 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 
-LANGUAGE = "en"
+TRANSLATION_NAME = "ulb"
+LANGUAGE = "es-419"
 book_number = 58
 book = "PHM"
+chapter = 1
+topic = "social"
 
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 
@@ -40,104 +44,32 @@ verses = parse_usfm_file(filename)
 parser = UsfmParser()
 
 with open(filename, "r", encoding="utf-8") as f:
-    content = f.read()
-verses = parser.parse(content)
+    translation_usfm = f.read()
+verses = parser.parse(translation_usfm)
 
 # --- 1. Load Ground Truth Data ---
 # This data file was generated in the previous step
 try:
-    df = pd.read_csv("../interpresure/philemon_face_ground_truth.csv")
+    df = pd.read_csv("../interpresure/interpresure_phm.csv")
 except FileNotFoundError:
-    print("Error: philemon_face_ground_truth.csv not found. Please ensure the data prep step was executed.")
+    print("Error: interpresure_phm.csv not found. Please ensure the data prep step was executed.")
     exit()
 
-NON_ENGLISH_TRANSLATION_DICT = {}
+TRANSLATED_SCRIPTURE_DICT = {}
 
 for _, row in df.iterrows():
-    chapter = int(row['Chapter'])
-    verse = int(row['Verse'])
+    c = int(row['chapter'])
+    verse = int(row['verse'])
     ref = f"{book} {chapter}:{verse}"
     text = verses[ref]
 
-    NON_ENGLISH_TRANSLATION_DICT[(chapter, verse)] = text
+    TRANSLATED_SCRIPTURE_DICT[(c, verse)] = text
 
-results = []
+linguist_models = ["gemini-3-pro-preview", "gpt-5.2"]
 
-async def run_initial_analysis():
-    task_description = """
-    Your task is to assign a score (1-10, where 10 is best) to the translation 
-    based on how well it preserves the specific 'Face' act (e.g., Mitigate Negative Face) from the Greek source. 
-    Err on the side of being more critical in the score.
-    The entire conversation and final output MUST be in English. 
-    Base your score ONLY on concrete lexical, grammatical, or rhetorical fidelity to the pragmatic goal, NOT theological opinion.
-    """
-
-    response_format = {
-        "type": "json_schema",
-        "json_schema": {
-            "name": "linguist_review",
-            "schema": LinguistReview.model_json_schema()
-        }
-    }
-    
-    linguists = [
-        LinguistAgent("GEMINI_LINGUIST", "gemini-3-pro-preview", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-        LinguistAgent("GPT5_LINGUIST", "gpt-5.2", OPENAI_KEY, None, task_description, response_format)
-    ]
-
-    # linguists = [
-    #     LinguistAgent("GEMINI_LINGUIST", "gemini-2.0-flash-lite", GEMINI_KEY, GOOGLE_BASE_URL, task_description, response_format),
-    #     LinguistAgent("GPT5_LINGUIST", "gpt-4o", OPENAI_KEY, None, task_description, response_format)
-    # ]
-
-    critic = CriticAgent()
-
-    for _, row in df.iterrows():  # using head(5) for quick demo; remove head() when full run
-    
-        chapter = row['Chapter']
-        verse = row['Verse']
-
-        if (chapter, verse) not in NON_ENGLISH_TRANSLATION_DICT:
-            continue
-
-        translated_text = NON_ENGLISH_TRANSLATION_DICT[(chapter, verse)]
-        for linguist in linguists:
-            analysis = LinguisticAnalysis(
-                linguist.get_agent(), 
-                critic.get_agent()
-            )
-            critique = await analysis.perform_analysis_and_review(
-                linguist._construct_prompt(chapter, verse, row['GreekText'], row['Face'], row['Notes'], translated_text)
-            )
-
-            print(f"--- {linguist.name} Analysis {book} {chapter}:{verse} ---")
-            print(critique)
-
-            critique = json.loads(critique)
-            results.append({
-                "Model": linguist.model_name,
-                "Agent_Name": linguist.name,
-                "Chapter": chapter,
-                "Verse": verse,
-                "Greek_Text": row['GreekText'],
-                "Translation": translated_text,
-                "Face_Annotation": row['Face'],
-                "Notes": row['Notes'],
-                "Score": critique["score"],
-                "Model_Analysis": critique["reasoning"]
-            })
-
-    final_df = pd.DataFrame(results)
-    final_df.to_csv("opening_statements.csv", index=False)
-    print("\n--- AutoGen Script Finished ---")
-    print("Results saved to autogen_face_analysis_results.csv")
-    print(final_df.to_markdown(index=False, numalign="left", stralign="left"))
-    return final_df
-
-
-async def run_debate(initial_analysis):
-    debate = Debate()
-    return await debate.process_interleaved_dataframe(initial_analysis)
+async def run_debate(initial_analysis, interpresure, topic):
+    debate = Debate(linguist_models)
+    return await debate.process_interleaved_dataframe(initial_analysis, interpresure, topic)
 
 from report.coalesce import coalesce_csvs
 async def run_analysis():
@@ -147,16 +79,18 @@ async def run_analysis():
     debate_file = f"../out/{LANGUAGE}/{book}/{book}_debate_output.csv"
     final_output_file = f"../out/{LANGUAGE}/{book}/{book}_final_output.json"
 
+    interpresure = Interpresure(book, 1)
 
-    initial = await run_initial_analysis()
-    # initial = pd.read_csv(opening_statement_file)
-    debate = await run_debate(initial)
+    #initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, book, topic, 1)
+    #initial = pd.read_csv(opening_statement_file)
+    #debate = await run_debate(initial, interpresure, topic)
 
 
-    initial.to_csv(opening_statement_file)
-    debate.to_csv(debate_file)
+    # initial.to_csv(opening_statement_file)
+    # debate.to_csv(debate_file)
 
-    coalesce_csvs(opening_statement_file, debate_file, final_output_file)
+    annotation_columns = interpresure.get_topic_columns(topic)
+    coalesce_csvs(individual_path=opening_statement_file, debate_path=debate_file, output_path=final_output_file, interpresure=interpresure, topic=topic, book=book, translation_title=TRANSLATION_NAME, translation_language=LANGUAGE, translation_usfm=translation_usfm)
 
 if __name__ == "__main__":
     # df = pd.read_csv("debate_analysis_results.csv")
