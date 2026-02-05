@@ -44,14 +44,15 @@ class LinguistAgent:
             f"ROLE: You are performing a cross-lingual pragmatic analysis.\n"
             "---------------------------------------------------------------------------------\n"
             f"GROUND TRUTH ANALYSIS:\n"
-            f"1. Greek Text: \"{greek}\"\n"
+            f"1. Greek Snippet: \"{greek}\"\n"
             f"2. Expert Annotations: "
             f"\"{pragmatic_annotations}\"\n"
             f"3. Expert Notes: \"{notes}\"\n\n"
             "TASK:\n"
-            f"Evaluate the following translation against the Greek pragmatic goal and rationale.\n"
+            f"Evaluate the following translation with respect to the Greek Snippet against the Greek pragmatic goal and rationale.\n"
+            f"The translation **WILL** contain a complete verse, and thus more content than just the Greek word or phrase in question."
             f"Translation: \"{translation}\"\n\n"
-            "FIRST, assign a score (1-10) to the translation for its fidelity to the 'Face' goal. "
+            "FIRST, assign a score (1-10) to the translation for its fidelity to the expert annotations. "
             "SECOND, justify your score in English by identifying the specific linguistic feature (e.g., verb tense, politeness markers) that either succeeds or fails. Provide the justification in Markdown format."
         )
         

@@ -11,7 +11,7 @@ class Interpresure:
             "title": """Logic and Assertion""",
             "description": "These columns define the 'reality' and truth-conditions of a statement. They track whether a claim is presented as a fact, a possibility, or an obligation.",
             "columns": [
-                "verdicality",
+                "veridicality",
                 "modality",
                 "entailment_pattern"
             ],
@@ -37,7 +37,7 @@ class Interpresure:
             "columns": [
                 "information_structure",
                 "question_under_discussion",
-                "prediction_type"
+                "predication_type"
             ],
             "goal": "Maintain the original thematic focus and emphasis. If the source text highlights a specific concept through word order or phrasing, the translation should use equivalent target-language mechanics to ensure the same 'center of gravity' for the sentence."
         },
@@ -78,7 +78,7 @@ class Interpresure:
         self.load(book, chapter)
 
     def load(self, book: str, chapter: int):
-        self.interpresure = pd.read_csv(self._get_file(book, chapter))
+        self.interpresure = pd.read_csv(self._get_file(book, chapter)).fillna("Not Applicable")
 
     def _get_file(self, book: str, chapter: int) -> str:
         return self._files[book.lower()][f"{chapter}"]

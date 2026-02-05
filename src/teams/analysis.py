@@ -37,6 +37,7 @@ class LinguisticAnalysis:
 
         self.task_description = f"""
             Your task is to assign a score (1-10, where 10 is best) to the translation with respect to {topic_title} from the Greek source.
+            While you will be seeing the full translation of the verse, limit your analysis ONLY to how the translation handles the particular SECTION of the Greek provided.
             {topic_description}.
             {topic_title} includes the following categories: {categories}.
             {topic_goal}.

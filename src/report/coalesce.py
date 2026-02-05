@@ -98,6 +98,7 @@
 
 import pandas as pd
 import json
+import numpy as np
 
 from data.interpresure import Interpresure
 
@@ -170,7 +171,10 @@ def coalesce_csvs(
     # Iterate through each unique combination of Verse, Text, and Annotation
     grouped = df_individual.groupby(group_cols, sort=False)
 
-    for (verse_num, greek_text, *annotations), ind_rows in grouped:
+    for (verse_num, greek_text, *unfiltered_annotations), ind_rows in grouped:
+        # convert boolean types away from np types which don't serialize
+        annotations = [bool(x) if isinstance(x, np.bool) else x for x in unfiltered_annotations]
+        
         # Extract segment-specific metadata
         first_row = ind_rows.iloc[0]
         translation = first_row.get('translation', "")
@@ -284,15 +288,20 @@ def coalesce_csvs(
             "description": interpresure.get_topic_description(topic)
         },
         "analysis": analysis_list,
-        "translation": {
-            "title": translation_title,
-            "language": translation_language,
-            "usfm": translation_usfm
-        }
     }
 
-    # 6. Save to file
+    class NumpyBoolEncoder(json.JSONEncoder):
+        def default(self, obj):
+            # Handle NumPy booleans/numbers
+            if isinstance(obj, np.bool_):
+                return bool(obj)
+            # Handle standard booleans if they were somehow masked
+            if isinstance(obj, bool):
+                return str(obj) # Or just return obj to get JSON true/false
+            return super().default(obj)
+
     with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(final_json, f, indent=2, ensure_ascii=False)
+        json.dump(final_json, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
     
     print(f"Successfully coalesced {len(analysis_list)} analysis segments into {output_path}")
+    return final_json

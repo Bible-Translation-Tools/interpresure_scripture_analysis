@@ -33,7 +33,8 @@ LANGUAGE = "es-419"
 book_number = 58
 book = "PHM"
 chapter = 1
-topic = "social"
+# topics = ["logical", "implicature", "structure", "social", "scalar"]
+topics = ["scalar"]
 
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 
@@ -75,22 +76,66 @@ from report.coalesce import coalesce_csvs
 async def run_analysis():
     os.makedirs(f"../out/{LANGUAGE}/{book}/", exist_ok=True)
 
-    opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_opening_statements.csv"
-    debate_file = f"../out/{LANGUAGE}/{book}/{book}_debate_output.csv"
-    final_output_file = f"../out/{LANGUAGE}/{book}/{book}_final_output.json"
 
-    interpresure = Interpresure(book, 1)
+    final_output_file = f"../out/{LANGUAGE}/{book}/{LANGUAGE}_{book}_complete_analysis.json"
 
-    #initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, book, topic, 1)
-    #initial = pd.read_csv(opening_statement_file)
-    #debate = await run_debate(initial, interpresure, topic)
+    evaluations = []
+    for topic in topics:
 
+        opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_opening_statements_{topic}.csv"
+        debate_file = f"../out/{LANGUAGE}/{book}/{book}_debate_output_{topic}.csv"
 
-    # initial.to_csv(opening_statement_file)
-    # debate.to_csv(debate_file)
+        interpresure = Interpresure(book, 1)
 
-    annotation_columns = interpresure.get_topic_columns(topic)
-    coalesce_csvs(individual_path=opening_statement_file, debate_path=debate_file, output_path=final_output_file, interpresure=interpresure, topic=topic, book=book, translation_title=TRANSLATION_NAME, translation_language=LANGUAGE, translation_usfm=translation_usfm)
+        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, book, topic, 1)
+        #initial = pd.read_csv(opening_statement_file)
+        debate = await run_debate(initial, interpresure, topic)
+        #debate = pd.read_csv(debate_file)
+
+        initial.to_csv(opening_statement_file)
+        debate.to_csv(debate_file)
+
+        annotation_columns = interpresure.get_topic_columns(topic)
+
+        eval_file = f"../out/{LANGUAGE}/{book}/{book}_{topic}_analysis.json"
+
+        eval = coalesce_csvs(
+            individual_path=opening_statement_file, 
+            debate_path=debate_file, 
+            output_path=eval_file, 
+            interpresure=interpresure, 
+            topic=topic, 
+            book=book, 
+            translation_title=TRANSLATION_NAME, 
+            translation_language=LANGUAGE, 
+            translation_usfm=translation_usfm
+        )
+        evaluations.append(eval)
+
+    finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
+
+import numpy as np
+class NumpyBoolEncoder(json.JSONEncoder):
+    def default(self, obj):
+        # Handle NumPy booleans/numbers
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        # Handle standard booleans if they were somehow masked
+        if isinstance(obj, bool):
+            return str(obj) # Or just return obj to get JSON true/false
+        return super().default(obj)
+
+def finalize(outpath, translation_language, translation_title, translation_usfm, evaulations):
+    final = {
+        "translation": {
+            "title": translation_title,
+            "language": translation_language,
+            "usfm": translation_usfm
+        },
+        "evaluation": evaulations
+    }
+    with open(outpath, "w", encoding='utf-8') as f:
+        json.dump(final, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
 
 if __name__ == "__main__":
     # df = pd.read_csv("debate_analysis_results.csv")

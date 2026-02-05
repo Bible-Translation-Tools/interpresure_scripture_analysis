@@ -118,7 +118,7 @@ class Debate:
             model_client=moderator_client, 
             system_message=f"""
             You are a moderator of a debate between linguists. 
-            The linguists are supposed to be discussing the translation of the following Greek text: 
+            The linguists are supposed to be discussing a translation of Greek with respect to how the translation handles one particular section of the original text: 
             >>> {greek_text}
 
             The translation being evaluated is as follows:
@@ -132,6 +132,7 @@ class Debate:
             ONLY Intervene as a moderator if a linguist's response **DOES NOT** meet the following criteria:
             1. The analysis must be based on verifiable linguistic, stylistic, or semantic arguments.
             2. Words and phrases being analyzed **MUST** be present in the texts being analyzed.
+            3. While the translation **WILL** include the translation of a full verse, the debate must **ONLY** be focused on how the translation handles the particular Greek word or phrase under discussion.
             """
         )
 

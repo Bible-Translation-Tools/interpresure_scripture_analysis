@@ -52,7 +52,7 @@ class SecretaryAgent:
 
     def _construct_prompt(self, opening_statements, debate_transcript, closing_statements):
         prompt = (
-            f"ROLE: You are summarizing a linguistic debate.\n"
+            f"ROLE: You are synthesizing a linguistic debate into a translation analysis report.\n"
             "---------------------------------------------------------------------------------\n"
             f"Opening Statements:\n"
             f"{opening_statements}\n\n"
@@ -62,7 +62,7 @@ class SecretaryAgent:
             f"{closing_statements}\n\n\n"
             "---------------------------------------------------------------------------------\n"
             f"TASK:"
-            "Provide a summary of the debate, extracting the final conclusions. "
+            "Provide a summary of the debate as a translation analysis report, extracting the final conclusions. "
             "Focus on the specific strengths of the translation being debated, and the specific weaknesses. "
             "If improvement suggestions were made, list exactly what should be done."
             "If the interlocutors did not reach a consensus, list the specific reasons why they disagreed."

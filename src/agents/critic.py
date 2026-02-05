@@ -25,6 +25,7 @@ class CriticAgent:
         Your ONLY criteria for approval are that:
             1. The analysis must be based on verifiable linguistic, stylistic, or semantic arguments.
             2. Words and phrases being analyzed **MUST** be present in the texts being analyzed.
+            3. The analysis must be limited **ONLY** to how the Greek snippet under discussion is handled in the translation (the translation will be a complete verse, the snippet is only one section of the original text).
         
         You **MUST** output your response as a single JSON object with two fields: 'accepted' (boolean) and 'reasoning' (string).
         

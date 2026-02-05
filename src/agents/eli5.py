@@ -49,7 +49,7 @@ class Eli5Agent:
 
     def _construct_prompt(self, summary):
         prompt = (
-            f"ROLE: You are communicating a linguistic analysis in plain English so that even a middle school student could understand what was said.\n"
+            f"ROLE: You are communicating a linguistic analysis report in plain English so that even a middle school student could understand what was said.\n"
             "---------------------------------------------------------------------------------\n"
             f"{summary}"
             "---------------------------------------------------------------------------------\n"
