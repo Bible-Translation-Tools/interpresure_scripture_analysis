@@ -590,16 +590,37 @@ export default function BibleAnalyzer() {
 
                             {/* Debate */}
                             {debate && (
-                                <CollapsibleCard title="Debate Transcript" icon={MessageSquare} score={debate.score}>
+                                <CollapsibleCard title="Debate Transcript" icon={MessageSquare} defaultOpen={true}>
                                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin">
-                                        {debate.debate_transcript?.map((turn, i) => (
-                                            <div key={i} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded' : ''}`}>
-                                                <div className="font-bold text-xs uppercase w-20 flex-shrink-0 text-gray-500">{turn.agent}</div>
-                                                <div className="text-sm text-gray-800"><ReactMarkdown components={markdownComponents}>{turn.argument || turn.feedback}</ReactMarkdown></div>
+                                        {debate.debate_transcript.filter((debate_item) => ( (debate_item.role !== "moderator" || debate_item.intervened === true)? true : false)).map((turn, idx) => (
+                                        <div key={idx} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded-lg border border-blue-100' : ''}`}>
+                                            <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${turn.role === 'moderator' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                                            {turn.role === 'moderator' ? 'M' : turn.agent.charAt(0)}
                                             </div>
+                                            <div className="flex-1">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-xs font-bold uppercase text-gray-500">{turn.agent} ({turn.role})</span>
+                                                {turn.proposed_score && (
+                                                <span className="text-xs font-mono bg-gray-100 px-1 rounded">Score: {turn.proposed_score}</span>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-gray-800">
+                                                <ReactMarkdown components={markdownComponents}>
+                                                    {turn.argument || turn.feedback}
+                                                </ReactMarkdown>
+                                            </p>
+                                            {turn.violators && turn.violators.length > 0 && (
+                                                <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                                                <AlertCircle size={12} />
+                                                Violations: {turn.violators.join(', ')}
+                                                </div>
+                                            )}
+                                            </div>
+                                        </div>
                                         ))}
                                     </div>
                                 </CollapsibleCard>
+
                             )}
 
                             {/* Closing Statements */}
@@ -615,7 +636,7 @@ export default function BibleAnalyzer() {
                                                     </span>
                                                 </div>
                                                 <div className="text-sm text-gray-600 italic">
-                                                    <ReactMarkdown components={markdownComponents}>{`"${stmt.statement}"`}</ReactMarkdown>
+                                                    <ReactMarkdown components={markdownComponents}>{`${stmt.statement}`}</ReactMarkdown>
                                                 </div>
                                             </div>
                                         ))}

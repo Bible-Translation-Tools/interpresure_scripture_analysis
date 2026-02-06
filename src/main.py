@@ -29,12 +29,11 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 
 TRANSLATION_NAME = "ulb"
-LANGUAGE = "es-419"
+LANGUAGE = "en"
 book_number = 58
 book = "PHM"
 chapter = 1
-# topics = ["logical", "implicature", "structure", "social", "scalar"]
-topics = ["scalar"]
+topics = ["logical", "implicature", "structure", "social", "scalar"]
 
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 
@@ -87,7 +86,7 @@ async def run_analysis():
 
         interpresure = Interpresure(book, 1)
 
-        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, book, topic, 1)
+        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, book, topic)
         #initial = pd.read_csv(opening_statement_file)
         debate = await run_debate(initial, interpresure, topic)
         #debate = pd.read_csv(debate_file)
