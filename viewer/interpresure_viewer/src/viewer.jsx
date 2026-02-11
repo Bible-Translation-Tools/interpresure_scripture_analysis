@@ -172,20 +172,52 @@ const CollapsibleCard = ({ title, icon: Icon, children, defaultOpen = false, sco
 const AnnotationBadge = ({ type, value }) => (
   <div className="flex flex-col bg-gray-50 border border-gray-200 rounded p-2 text-xs">
     <span className="font-bold text-gray-400 uppercase tracking-wider mb-1 text-[10px]">{type.replace(/_/g, ' ')}</span>
-    <span className="font-medium text-gray-800">{`${value}`}</span>
+    <span className="font-medium text-gray-800">{value}</span>
   </div>
+);
+
+const VerseContextCard = ({ greek, translation }) => (
+    <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
+        <div className="grid grid-cols-1 gap-4">
+            {greek && (
+                <div>
+                    <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-400 tracking-wider mb-1">
+                        <BookOpen size={10} /> Source (Greek)
+                    </span>
+                    <p className="font-serif text-lg text-gray-800 leading-snug bg-white/60 p-2 rounded border border-blue-100/50">
+                        {greek}
+                    </p>
+                </div>
+            )}
+            {translation && (
+                <div>
+                    <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-400 tracking-wider mb-1">
+                        <FileText size={10} /> Target Translation
+                    </span>
+                    <p className="text-gray-700 leading-relaxed italic bg-white/60 p-2 rounded border border-blue-100/50">
+                        "{translation}"
+                    </p>
+                </div>
+            )}
+        </div>
+    </div>
 );
 
 // --- Main Application ---
 
 export default function BibleAnalyzer() {
   const [usfmData, setUsfmData] = useState(null);
+  
   // analysisData Structure: Map<Chapter, Map<Verse, Array<GoalEntry>>>
   // GoalEntry: { goal: { type, title... }, verseData: { greek, annotations, analysis... } }
   const [analysisData, setAnalysisData] = useState(null); 
+  
+  // verseReports Structure: { chapter: { verse: { summary, eli5 } } }
+  const [verseReports, setVerseReports] = useState(null);
+
   const [activeChapter, setActiveChapter] = useState(1);
   
-  // Selection State: { c: chapter, v: verse, goalType: string }
+  // Selection State: { c: chapter, v: verse, type: 'goal'|'summary', goalType?: string }
   const [activeSelection, setActiveSelection] = useState(null); 
   
   // Track which verses are expanded in the left panel
@@ -217,7 +249,12 @@ export default function BibleAnalyzer() {
           if (firstCh) setActiveChapter(parseInt(firstCh));
         }
 
-        // 2. Handle Evaluation/Analysis Data
+        // 2. Handle Reports (Verse Summaries)
+        if (json.reports) {
+            setVerseReports(json.reports);
+        }
+
+        // 3. Handle Evaluation/Analysis Data
         let rawData = [];
         const evaluationData = json.evaluation || json.evauluation;
 
@@ -373,33 +410,132 @@ export default function BibleAnalyzer() {
 
         const goals = Array.from(groupedGoals.values());
 
+        // Check if report exists for this verse
+        const hasReport = verseReports?.[activeChapter]?.[vNum] !== undefined;
+
         return {
           vNum,
           text,
-          goals // [{ type, title, variants: [...], minScore }, ...]
+          goals, // [{ type, title, variants: [...], minScore }, ...]
+          hasReport
         };
       });
-  }, [usfmData, analysisData, activeChapter]);
+  }, [usfmData, analysisData, verseReports, activeChapter]);
 
-  const selectedVariants = useMemo(() => {
-    if (!activeSelection || !analysisData) return null;
-    const { c, v, goalType } = activeSelection;
-    
-    const verseGoals = analysisData?.[c]?.[v] || [];
-    // Filter to get all analysis entries matching this goal type
-    const matchingContexts = verseGoals.filter(ctx => ctx.goal.type === goalType);
-    
-    if (matchingContexts.length === 0) return null;
+  const selectedContent = useMemo(() => {
+    if (!activeSelection) return null;
+    const { c, v, type, goalType } = activeSelection;
 
-    return {
-        c, v,
-        goal: matchingContexts[0].goal, // Use goal metadata from first match
-        variants: matchingContexts // Array of { goal, verseData }
-    };
-  }, [activeSelection, analysisData]);
+    // Common verse text
+    const verseText = usfmData?.[c]?.[v] || '';
+
+    if (type === 'summary') {
+        const report = verseReports?.[c]?.[v];
+        if (!report) return null;
+        
+        // Find a representative Greek source from analysisData if available
+        const greekSource = analysisData?.[c]?.[v]?.[0]?.verseData?.greek;
+
+        return {
+            type: 'summary',
+            c, v,
+            verseText,
+            greekSource,
+            data: report // { summary, eli5 }
+        };
+    }
+
+    if (type === 'goal') {
+        if (!analysisData) return null;
+        const verseGoals = analysisData?.[c]?.[v] || [];
+        // Filter to get all analysis entries matching this goal type
+        const matchingContexts = verseGoals.filter(ctx => ctx.goal.type === goalType);
+        
+        if (matchingContexts.length === 0) return null;
+
+        return {
+            type: 'goal',
+            c, v,
+            goal: matchingContexts[0].goal, // Use goal metadata from first match
+            variants: matchingContexts // Array of { goal, verseData }
+        };
+    }
+
+    return null;
+  }, [activeSelection, analysisData, verseReports, usfmData]);
 
 
   // --- Sub-components ---
+
+  const VerseSummaryView = ({ selection }) => {
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const { data, c, v, verseText, greekSource } = selection;
+
+    return (
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="p-6 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
+                <div className="flex items-center gap-2 mb-3">
+                     <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs font-bold uppercase tracking-wider">
+                       Chapter {c} : {v}
+                     </span>
+                     <ChevronRight size={14} className="text-gray-300" />
+                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs font-bold uppercase tracking-wider">
+                       <AlignLeft size={12} />
+                       Verse Summary
+                     </span>
+                </div>
+                <h2 className="text-2xl font-serif text-gray-800 mb-1 leading-tight">
+                    Verse Overview
+                </h2>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                <div className="space-y-6">
+                    <VerseContextCard greek={greekSource} translation={verseText} />
+
+                    <hr className="border-gray-100 my-4" />
+
+                    <div className="flex items-center justify-between">
+                         <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                            Analysis Results
+                         </h3>
+                        <button 
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showAdvanced ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                        <Settings size={12} />
+                        {showAdvanced ? "Hide Details" : "Show Details"}
+                        </button>
+                    </div>
+
+                    {!showAdvanced ? (
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <AlignLeft size={14} />
+                                Simplified Summary (ELI5)
+                            </h4>
+                            <div className="text-gray-800 leading-relaxed text-sm">
+                                {data.eli5 ? (
+                                    <ReactMarkdown components={markdownComponents}>{data.eli5}</ReactMarkdown>
+                                ) : (
+                                    <p className="text-gray-400 italic">No simplified summary available.</p>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                             <CollapsibleCard title="Full Verse Summary" icon={FileText} defaultOpen={true}>
+                                <div className="text-sm text-gray-700">
+                                   {data.summary ? <ReactMarkdown components={markdownComponents}>{data.summary}</ReactMarkdown> : <p className="italic text-gray-400">No detailed summary available.</p>}
+                                </div>
+                             </CollapsibleCard>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+  };
 
   const AnalysisDetailView = ({ selection }) => {
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
@@ -499,27 +635,7 @@ export default function BibleAnalyzer() {
             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
                  <div className="space-y-6">
                     
-                    {/* Source & Target Card */}
-                    <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
-                        <div className="grid grid-cols-1 gap-4">
-                            <div>
-                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-400 tracking-wider mb-1">
-                                    <BookOpen size={10} /> Source (Greek)
-                                </span>
-                                <p className="font-serif text-lg text-gray-800 leading-snug bg-white/60 p-2 rounded border border-blue-100/50">
-                                    {verseData.greek}
-                                </p>
-                            </div>
-                            <div>
-                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-400 tracking-wider mb-1">
-                                    <FileText size={10} /> Target Translation
-                                </span>
-                                <p className="text-gray-700 leading-relaxed italic bg-white/60 p-2 rounded border border-blue-100/50">
-                                    "{verseData.translation}"
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <VerseContextCard greek={verseData.greek} translation={verseData.translation} />
 
                     {/* Annotations Grid */}
                     {verseData.annotations && verseData.annotations.length > 0 && (
@@ -590,37 +706,36 @@ export default function BibleAnalyzer() {
 
                             {/* Debate */}
                             {debate && (
-                                <CollapsibleCard title="Debate Transcript" icon={MessageSquare} defaultOpen={true}>
+                                <CollapsibleCard title="Debate Transcript" icon={MessageSquare} score={debate.score}>
                                     <div className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin">
                                         {debate.debate_transcript.filter((debate_item) => ( (debate_item.role !== "moderator" || debate_item.intervened === true)? true : false)).map((turn, idx) => (
-                                        <div key={idx} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded-lg border border-blue-100' : ''}`}>
-                                            <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${turn.role === 'moderator' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
-                                            {turn.role === 'moderator' ? 'M' : turn.agent.charAt(0)}
-                                            </div>
-                                            <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs font-bold uppercase text-gray-500">{turn.agent} ({turn.role})</span>
-                                                {turn.proposed_score && (
-                                                <span className="text-xs font-mono bg-gray-100 px-1 rounded">Score: {turn.proposed_score}</span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-gray-800">
-                                                <ReactMarkdown components={markdownComponents}>
-                                                    {turn.argument || turn.feedback}
-                                                </ReactMarkdown>
-                                            </p>
-                                            {turn.violators && turn.violators.length > 0 && (
-                                                <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
-                                                <AlertCircle size={12} />
-                                                Violations: {turn.violators.join(', ')}
+                                            <div key={idx} className={`flex gap-3 ${turn.role === 'moderator' ? 'bg-blue-50 p-3 rounded-lg border border-blue-100' : ''}`}>
+                                                <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${turn.role === 'moderator' ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                                                {turn.role === 'moderator' ? 'M' : turn.agent.charAt(0)}
                                                 </div>
-                                            )}
+                                                <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs font-bold uppercase text-gray-500">{turn.agent} ({turn.role})</span>
+                                                    {turn.proposed_score && (
+                                                    <span className="text-xs font-mono bg-gray-100 px-1 rounded">Score: {turn.proposed_score}</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-gray-800">
+                                                    <ReactMarkdown components={markdownComponents}>
+                                                        {turn.argument || turn.feedback}
+                                                    </ReactMarkdown>
+                                                </p>
+                                                {turn.violators && turn.violators.length > 0 && (
+                                                    <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                                                    <AlertCircle size={12} />
+                                                    Violations: {turn.violators.join(', ')}
+                                                    </div>
+                                                )}
+                                                </div>
                                             </div>
-                                        </div>
                                         ))}
                                     </div>
                                 </CollapsibleCard>
-
                             )}
 
                             {/* Closing Statements */}
@@ -713,35 +828,51 @@ export default function BibleAnalyzer() {
 
             {/* Verse Navigation List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {currentVerses.map(({ vNum, text, goals }) => {
+              {currentVerses.map(({ vNum, text, goals, hasReport }) => {
                 const isExpanded = expandedVerses.has(vNum);
-                // Check if any goal in this verse is selected
                 const hasSelectionInThisVerse = activeSelection?.c === activeChapter && activeSelection?.v === vNum;
+                const isSummarySelected = hasSelectionInThisVerse && activeSelection?.type === 'summary';
 
                 return (
                   <div key={vNum} className="border border-gray-100 rounded-lg overflow-hidden bg-white hover:border-gray-300 transition-colors shadow-sm">
                     {/* Verse Header (Level 1) */}
                     <div 
-                      onClick={() => toggleVerseExpansion(vNum)}
+                      onClick={() => {
+                        // If reports exist, clicking the row selects the Summary view
+                        if (hasReport) {
+                            setActiveSelection({ c: activeChapter, v: vNum, type: 'summary' });
+                        } else {
+                            // Fallback to expanding accordion if no report
+                            toggleVerseExpansion(vNum);
+                        }
+                      }}
                       className={`
-                        p-3 cursor-pointer flex gap-3 items-start relative
-                        ${hasSelectionInThisVerse ? 'bg-indigo-50/50' : 'hover:bg-gray-50'}
+                        p-3 cursor-pointer flex gap-3 items-start relative transition-colors
+                        ${isSummarySelected ? 'bg-indigo-50 border-l-4 border-indigo-500' : 'hover:bg-gray-50 border-l-4 border-transparent'}
                       `}
                     >
                       {/* Verse Number Badge */}
-                      <span className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 text-xs font-bold mt-0.5">
+                      <span className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold mt-0.5 ${isSummarySelected ? 'bg-indigo-200 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
                         {vNum}
                       </span>
                       
                       <div className="flex-1 min-w-0">
                          <div className="flex items-start justify-between gap-4">
-                             {/* Text Preview - Word Wrapped */}
+                             {/* Text Preview */}
                              <p className={`text-sm text-gray-800 whitespace-normal ${isExpanded ? 'font-medium' : ''}`}>
                                 {text}
                              </p>
                              
                              <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                {isExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleVerseExpansion(vNum);
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
                                 
                                 {/* Badges for Available Goal Types */}
                                 <div className="flex flex-wrap gap-1 justify-end">
@@ -772,7 +903,7 @@ export default function BibleAnalyzer() {
                                         return (
                                             <button 
                                                 key={idx}
-                                                onClick={() => setActiveSelection({ c: activeChapter, v: vNum, goalType: g.type })}
+                                                onClick={() => setActiveSelection({ c: activeChapter, v: vNum, type: 'goal', goalType: g.type })}
                                                 className={`
                                                     w-full flex items-center justify-between p-3 pl-12 text-left transition-colors
                                                     ${isSelected ? 'bg-white border-l-4 border-indigo-500 shadow-inner' : 'hover:bg-gray-100 border-l-4 border-transparent'}
@@ -818,16 +949,20 @@ export default function BibleAnalyzer() {
 
           {/* Right Column: Analysis Detail Panel */}
           <div className="flex-1 bg-gray-50 flex flex-col min-w-[400px]">
-            {selectedVariants ? (
-               <AnalysisDetailView selection={selectedVariants} />
+            {selectedContent ? (
+                selectedContent.type === 'summary' ? (
+                    <VerseSummaryView selection={selectedContent} />
+                ) : (
+                    <AnalysisDetailView selection={selectedContent} />
+                )
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-8">
                 <div className="bg-white p-6 rounded-full shadow-sm mb-4">
                      <Layers size={48} className="opacity-20 text-indigo-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-600">Select a Pragmatic Goal</h3>
+                <h3 className="text-lg font-medium text-gray-600">Select Verse or Goal</h3>
                 <p className="text-sm mt-2 max-w-xs leading-relaxed">
-                  Expand a verse in the list on the left, then click on a specific analysis goal (e.g., "Social Dynamics") to view the evaluation details here.
+                  Click a Verse row to see the Verse Summary, or expand the row to select a specific Pragmatic Goal analysis.
                 </p>
               </div>
             )}
