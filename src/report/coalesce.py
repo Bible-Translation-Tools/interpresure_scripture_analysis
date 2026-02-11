@@ -161,10 +161,10 @@ def coalesce_csvs(
     
     # 3. Process and Group Data
     # We group by these three keys to ensure unique segments are not merged
-    group_cols = ['verse', 'greek_text'] + annotation_columns
+    group_cols = ['verse', 'greek_text'] # + annotation_columns
     
-    for col in annotation_columns:
-        df_individual[col] = df_individual[col].fillna("Uncategorized")
+    # for col in annotation_columns:
+    #     df_individual[col] = df_individual[col].fillna("Uncategorized")
     
     analysis_list = []
 
@@ -178,7 +178,7 @@ def coalesce_csvs(
         # Extract segment-specific metadata
         first_row = ind_rows.iloc[0]
         translation = first_row.get('translation', "")
-        notes = first_row.get('notes', "")
+        # notes = first_row.get('notes', "")
 
         inner_analysis = []
 
@@ -197,11 +197,11 @@ def coalesce_csvs(
         mask = (df_debate['verse'] == verse_num) & \
             (df_debate['greek_text'].str.strip() == greek_text.strip())
 
-        # 2. Dynamically add filters for every annotation column
-        for col, val in zip(annotation_columns, annotations):
-            # Ensure we handle strings for .strip() if necessary, 
-            # otherwise a direct comparison (df_debate[col] == val) is safer
-            mask &= (df_debate[col].astype(str).str.strip() == str(val).strip())
+        # # 2. Dynamically add filters for every annotation column
+        # for col, val in zip(annotation_columns, annotations):
+        #     # Ensure we handle strings for .strip() if necessary, 
+        #     # otherwise a direct comparison (df_debate[col] == val) is safer
+        #     mask &= (df_debate[col].astype(str).str.strip() == str(val).strip())
 
         deb_rows = df_debate[mask]
 
@@ -271,8 +271,8 @@ def coalesce_csvs(
             "verse": int(verse_num),
             "greek": greek_text,
             "translation": translation,
-            "annotations": [{"type": col, "annotation": ann } for (col, ann) in zip(annotation_columns, annotations)],
-            "notes": notes,
+            # "annotations": [{"type": col, "annotation": ann } for (col, ann) in zip(annotation_columns, annotations)],
+            # "notes": notes,
             "analysis": inner_analysis
         }
         analysis_list.append(verse_obj)

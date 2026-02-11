@@ -21,6 +21,8 @@ from usfm2dict import parse_usfm_file, UsfmParser
 from dotenv import load_dotenv
 import os
 
+from teams.summarize import SummarizeDebate
+
 load_dotenv()
 
 GOOGLE_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -33,9 +35,10 @@ LANGUAGE = "en"
 book_number = 58
 book = "PHM"
 chapter = 1
-topics = ["logical", "implicature", "structure", "social", "scalar"]
+topics = ["implicature", "structure", "social", "scales"]
 
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
+greek_filename = f"../lang/grc/{book_number}-{book}.usfm"
 
 # Parse a file
 verses = parse_usfm_file(filename)
@@ -45,7 +48,12 @@ parser = UsfmParser()
 
 with open(filename, "r", encoding="utf-8") as f:
     translation_usfm = f.read()
+
+with open(greek_filename, "r", encoding="utf-8") as f:
+    greek_usfm = f.read()
+
 verses = parser.parse(translation_usfm)
+greek_verses = parser.parse(greek_usfm)
 
 # --- 1. Load Ground Truth Data ---
 # This data file was generated in the previous step
@@ -56,14 +64,17 @@ except FileNotFoundError:
     exit()
 
 TRANSLATED_SCRIPTURE_DICT = {}
+GREEK_SCRIPTURE_DICT = {}
 
 for _, row in df.iterrows():
     c = int(row['chapter'])
     verse = int(row['verse'])
     ref = f"{book} {chapter}:{verse}"
     text = verses[ref]
+    greek_text = greek_verses[ref]
 
     TRANSLATED_SCRIPTURE_DICT[(c, verse)] = text
+    GREEK_SCRIPTURE_DICT[(c, verse)] =  greek_text
 
 linguist_models = ["gemini-3-pro-preview", "gpt-5.2"]
 
@@ -86,32 +97,40 @@ async def run_analysis():
 
         interpresure = Interpresure(book, 1)
 
-        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, book, topic)
-        #initial = pd.read_csv(opening_statement_file)
-        debate = await run_debate(initial, interpresure, topic)
-        #debate = pd.read_csv(debate_file)
+        interpresure.get_annotations_markdown("scales", "phm", 1, 1)
 
-        initial.to_csv(opening_statement_file)
-        debate.to_csv(debate_file)
+        #initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, GREEK_SCRIPTURE_DICT, book, topic, 1)
+        initial = pd.read_csv(opening_statement_file)
+        
+        # debate = await run_debate(initial, interpresure, topic)
+        debate = pd.read_csv(debate_file)
+
+        # initial.to_csv(opening_statement_file)
+        # debate.to_csv(debate_file)
 
         annotation_columns = interpresure.get_topic_columns(topic)
 
         eval_file = f"../out/{LANGUAGE}/{book}/{book}_{topic}_analysis.json"
 
-        eval = coalesce_csvs(
-            individual_path=opening_statement_file, 
-            debate_path=debate_file, 
-            output_path=eval_file, 
-            interpresure=interpresure, 
-            topic=topic, 
-            book=book, 
-            translation_title=TRANSLATION_NAME, 
-            translation_language=LANGUAGE, 
-            translation_usfm=translation_usfm
-        )
-        evaluations.append(eval)
+    #     eval = coalesce_csvs(
+    #         individual_path=opening_statement_file, 
+    #         debate_path=debate_file, 
+    #         output_path=eval_file, 
+    #         interpresure=interpresure, 
+    #         topic=topic, 
+    #         book=book, 
+    #         translation_title=TRANSLATION_NAME, 
+    #         translation_language=LANGUAGE, 
+    #         translation_usfm=translation_usfm
+    #     )
+    #     evaluations.append(eval)
 
-    finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
+    # final = finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
+    with open(final_output_file, "r") as fp:
+        final = json.loads(fp.read())
+
+    reports = await SummarizeDebate().summarize(final)
+    append_reports(final_output_file, final, reports)
 
 import numpy as np
 class NumpyBoolEncoder(json.JSONEncoder):
@@ -135,6 +154,15 @@ def finalize(outpath, translation_language, translation_title, translation_usfm,
     }
     with open(outpath, "w", encoding='utf-8') as f:
         json.dump(final, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
+
+    return final
+
+def append_reports(outpath, final, reports, ):
+    final["reports"] = reports
+
+    with open(outpath, "w", encoding='utf-8') as f:
+        json.dump(final, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
+
 
 if __name__ == "__main__":
     # df = pd.read_csv("debate_analysis_results.csv")

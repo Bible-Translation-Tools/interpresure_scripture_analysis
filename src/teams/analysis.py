@@ -26,7 +26,13 @@ class LinguisticAnalysis:
         }
     }
 
-    def __init__(self, interpresure: Interpresure, topic: str, linguist_models: list[str], critic_model: str):
+    def __init__(
+        self, 
+        interpresure: Interpresure, 
+        topic: str, 
+        linguist_models: list[str], 
+        critic_model: str
+    ):
 
         self.interpresure = interpresure
 
@@ -37,7 +43,6 @@ class LinguisticAnalysis:
 
         self.task_description = f"""
             Your task is to assign a score (1-10, where 10 is best) to the translation with respect to {topic_title} from the Greek source.
-            While you will be seeing the full translation of the verse, limit your analysis ONLY to how the translation handles the particular SECTION of the Greek provided.
             {topic_description}.
             {topic_title} includes the following categories: {categories}.
             {topic_goal}.
@@ -114,33 +119,44 @@ class LinguisticAnalysis:
         print("⚠️ Max review rounds reached — returning last version.")
         return critique_for_review
     
-    async def run(self, translated_scripture_dict: dict, book, topic, sample: int = None) -> DataFrame:
+    async def run(
+        self, 
+        translated_scripture_dict: dict,
+        greek_scripture_dict: dict, 
+        book, 
+        topic, 
+        sample: int = None
+    ) -> DataFrame:
         print(f"Running analysis for: {book}, {topic}")
 
         results = []
         df = self.interpresure.get_annotations(topic)
 
-        if sample is not None: 
-            iterable = df.head(sample).iterrows() 
-        else: 
-            iterable = df.iterrows()
+        grouped_data = df.groupby(['chapter', 'verse'])
 
-        for _, row in iterable:
-        
-            chapter = row['chapter']
-            verse = row['verse']
+        processed = 0
+
+        for (chapter, verse), group_df in grouped_data:
+            if sample is not None and processed >= sample:
+                break
 
             if (chapter, verse) not in translated_scripture_dict:
+                print(f"ERROR! Chapter {chapter} Verse {verse} not in the translation corpus!")
                 continue
 
-            translated_text = translated_scripture_dict[(chapter, verse)]
+            if (chapter, verse) not in greek_scripture_dict:
+                print(f"ERROR! Chapter {chapter} Verse {verse} not in the greek corpus!")
+                continue
 
-            pragmatic_annotations = "\n".join([f"- {x}: {row[x]} " for x in self.interpresure.get_topic_columns(topic)])
+            pragmatic_annotations = self.interpresure.get_annotations_markdown(topic, int(chapter), int(verse))
+            translated_text = translated_scripture_dict[(chapter, verse)]
+            greek_text = greek_scripture_dict[(chapter, verse)]
+        
 
             for linguist in self.linguists:
                 critique = await self._perform_analysis_and_review(
                     linguist,
-                    linguist._construct_prompt(chapter, verse, row['greek_text'], pragmatic_annotations, row['notes'], translated_text)
+                    linguist._construct_prompt(pragmatic_annotations, translated_text, greek_text)
                 )
 
                 print(f"--- {linguist.name} Analysis {book} {chapter}:{verse} ---")
@@ -154,14 +170,17 @@ class LinguisticAnalysis:
                         "agent_name": linguist.name,
                         "chapter": chapter,
                         "verse": verse,
-                        "greek_text": row['greek_text'],
+                        "greek_text": greek_text,
                         "translation": translated_text,
-                        "notes": row['notes'],
+                        # "notes": row['notes'],
                         "score": critique["score"],
                         "model_analysis": critique["reasoning"]
-                    } |
-                    { x: row[x] for x in self.interpresure.get_topic_columns(topic)}
+                    } 
+                    # |
+                    # { x: row[x] for x in self.interpresure.get_topic_columns(topic)}
                 )
+
+            processed += 1
 
         final_df = DataFrame(results)
         final_df.to_csv("opening_statements.csv", index=False)

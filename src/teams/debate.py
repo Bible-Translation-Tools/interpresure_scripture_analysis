@@ -73,7 +73,7 @@ class Debate:
         verse = group_df.iloc[0]['verse']
         greek_text = group_df.iloc[0]['greek_text']
         translation = group_df.iloc[0]['translation']
-        annotation_columns = interpresure.get_topic_columns(topic)
+        # annotation_columns = interpresure.get_topic_columns(topic)
 
         print(f"\n--- 🗣️  Initiating Debate for {chapter} {verse} ---")
 
@@ -83,8 +83,8 @@ class Debate:
         initial_context += f"**Greek Text** {greek_text}\n\n"
         initial_context += f"** Translation ** {translation}\n\n"
 
-        for col in annotation_columns:
-            initial_context += f"## **{col}** {group_df.iloc[0][col]}\n\n"
+        # for col in annotation_columns:
+        #     initial_context += f"## **{col}** {group_df.iloc[0][col]}\n\n"
 
         initial_context += "### Initial Independent Analyses:\n"
 
@@ -111,7 +111,7 @@ class Debate:
             key=moderator_model_config["key"]
         )
 
-        pragmatic_annotations = "\n".join([f"- {x}: {group_df.iloc[0][x]} " for x in annotation_columns])
+        pragmatic_annotations = interpresure.get_annotations_markdown(topic, chapter, verse)
 
         moderator = AssistantAgent(
             name="Moderator", 
@@ -182,7 +182,7 @@ class Debate:
             "closing_statements": json.dumps(closing_statements),
             "summary": summary,
             "eli5": eli5
-        } | { x: group_df.iloc[0][x] for x in annotation_columns}
+        }# | { x: group_df.iloc[0][x] for x in annotation_columns}
         
         return pd.DataFrame([row_data])
 
@@ -210,7 +210,7 @@ class Debate:
                 print(consensus_data)
                 final_results.append(consensus_data)
             except Exception as e:
-                print("Error! rate limit, trying again...", e)
+                print("Error! rate limit, trying again...", e.with_traceback)
                 time.sleep(61 * 5)
                 print("INFO: retrying")
                 await run(group_df)

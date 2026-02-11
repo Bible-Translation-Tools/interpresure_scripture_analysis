@@ -49,6 +49,16 @@ class SecretaryAgent:
         task = self._construct_prompt(opening_statements, debate_transcript, closing_statements)
         summary = await self.agent.run(task=task)
         return summary.messages[-1].content
+    
+    async def summarize_reports(self, reports):
+        task = (
+            "ROLE: You are synthesizing pragmatic analysis reports for a translation of a verse of the Bible into one report. Be sure that all details from each report are captured.\n"
+            "---------------------------------------------------------------------------------\n"
+            f"{reports}"
+        )
+
+        summary = await self.agent.run(task=task)
+        return summary.messages[-1].content
 
     def _construct_prompt(self, opening_statements, debate_transcript, closing_statements):
         prompt = (
