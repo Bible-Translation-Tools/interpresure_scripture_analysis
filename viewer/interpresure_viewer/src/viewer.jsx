@@ -44,26 +44,26 @@ const markdownComponents = {
 
 // --- Color Scale Logic ---
 const getScoreColor = (score) => {
-  const s = parseInt(score);
+  const s = parseFloat(score);
   if (isNaN(s)) return 'bg-gray-100 text-gray-500'; 
 
   // 1-10 Scale mapping
   if (s >= 10) return 'bg-green-500 text-white';
-  if (s === 9) return 'bg-green-300 text-gray-900';
-  if (s === 8) return 'bg-lime-300 text-gray-900';
-  if (s === 7) return 'bg-yellow-200 text-gray-900';
-  if (s === 6) return 'bg-yellow-500 text-white';
-  if (s === 5) return 'bg-orange-300 text-gray-900';
-  if (s === 4) return 'bg-orange-400 text-white';
-  if (s === 3) return 'bg-red-400 text-white';
-  if (s === 2) return 'bg-red-500 text-white';
+  if (s >= 9) return 'bg-green-300 text-gray-900';
+  if (s >= 8) return 'bg-lime-300 text-gray-900';
+  if (s >= 7) return 'bg-yellow-200 text-gray-900';
+  if (s >= 6) return 'bg-yellow-500 text-white';
+  if (s >= 5) return 'bg-orange-300 text-gray-900';
+  if (s >= 4) return 'bg-orange-400 text-white';
+  if (s >= 3) return 'bg-red-400 text-white';
+  if (s >= 2) return 'bg-red-500 text-white';
   if (s <= 1) return 'bg-red-700 text-white';
   
   return 'bg-gray-100 text-gray-500';
 };
 
 const getScoreBadgeColor = (score) => {
-  const s = parseInt(score);
+  const s = parseFloat(score);
   if (isNaN(s)) return 'bg-gray-100 text-gray-800';
   if (s >= 8) return 'bg-green-100 text-green-800 border-green-200';
   if (s >= 6) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -71,7 +71,7 @@ const getScoreBadgeColor = (score) => {
 };
 
 const getScoreDotColor = (score) => {
-  const s = parseInt(score);
+  const s = parseFloat(score);
   if (isNaN(s)) return 'bg-gray-300';
   if (s >= 8) return 'bg-green-500';
   if (s >= 6) return 'bg-yellow-400';
@@ -135,7 +135,105 @@ const parseUSFM = (text) => {
   return book;
 };
 
+// --- Score & Goal Helpers ---
+
+const getLowestScore = (verseData) => {
+  if (!verseData || !verseData.analysis) return null;
+  const scores = verseData.analysis
+    .map(a => {
+        if (a.type === 'debate') return a.score;
+        if (a.type === 'individual') return a.score;
+        return null;
+    })
+    .filter(s => s != null && !isNaN(s));
+  
+  if (scores.length === 0) return null;
+  return Math.min(...scores);
+};
+
+const getGoalsAndScoreForVerse = (allContexts) => {
+  const groupedGoals = new Map();
+  
+  allContexts.forEach(ctx => {
+      const type = ctx.goal.type;
+      if (!groupedGoals.has(type)) {
+          groupedGoals.set(type, {
+              type: type,
+              title: ctx.goal.title,
+              variants: [],
+              minScore: null
+          });
+      }
+      const group = groupedGoals.get(type);
+      group.variants.push(ctx);
+      
+      const s = getLowestScore(ctx.verseData);
+      if (s !== null) {
+          if (group.minScore === null || s < group.minScore) {
+              group.minScore = s;
+          }
+      }
+  });
+
+  const goals = Array.from(groupedGoals.values());
+  
+  // Calculate total score as an average of the minimum scores
+  let totalScoreSum = 0;
+  let validScoreCount = 0;
+  goals.forEach(g => {
+      if (g.minScore !== null && !isNaN(g.minScore)) {
+          totalScoreSum += g.minScore;
+          validScoreCount++;
+      }
+  });
+  
+  const totalScore = validScoreCount > 0 
+    ? Math.round((totalScoreSum / validScoreCount) * 10) / 10 
+    : null;
+
+  return { goals, totalScore };
+};
+
 // --- Sub-Components ---
+
+const ScoreBar = ({ score, label, max = 10, isTotal = false, onClick }) => {
+    if (score === null || isNaN(score)) return null;
+    const percentage = Math.min((score / max) * 100, 100);
+    
+    let color = 'bg-green-500';
+    if (score < 6) color = 'bg-red-500';
+    else if (score < 8) color = 'bg-yellow-400';
+
+    const Container = onClick ? 'button' : 'div';
+    const interactiveStyles = onClick 
+        ? 'hover:bg-gray-50 p-2 -ml-2 rounded-lg transition-colors cursor-pointer group hover:shadow-sm border border-transparent hover:border-gray-100' 
+        : '';
+
+    return (
+        <Container 
+            onClick={onClick}
+            className={`flex items-center gap-3 w-full text-left ${isTotal ? 'mb-2' : ''} ${interactiveStyles}`}
+        >
+            <span className={`w-32 ${isTotal ? 'text-sm font-bold text-gray-800' : 'text-xs font-medium text-gray-600'} ${onClick ? 'group-hover:text-indigo-600 transition-colors' : ''}`}>
+                {label}
+            </span>
+            <div className={`flex-1 ${isTotal ? 'h-3' : 'h-2'} bg-gray-100 rounded-full overflow-hidden`}>
+                <div 
+                    className={`h-full ${color} rounded-full transition-all duration-500`} 
+                    style={{ width: `${percentage}%` }}
+                ></div>
+            </div>
+            <span className={`w-8 text-right ${isTotal ? 'text-sm font-bold' : 'text-xs font-medium'} text-gray-700`}>
+                {score}
+            </span>
+            {onClick && (
+                <div className="w-4 flex justify-end">
+                    <ChevronRight size={14} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+            )}
+        </Container>
+    );
+};
 
 const CollapsibleCard = ({ title, icon: Icon, children, defaultOpen = false, score = null, className = "" }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -207,27 +305,14 @@ const VerseContextCard = ({ greek, translation }) => (
 
 export default function BibleAnalyzer() {
   const [usfmData, setUsfmData] = useState(null);
-  
-  // analysisData Structure: Map<Chapter, Map<Verse, Array<GoalEntry>>>
-  // GoalEntry: { goal: { type, title... }, verseData: { greek, annotations, analysis... } }
   const [analysisData, setAnalysisData] = useState(null); 
-  
-  // verseReports Structure: { chapter: { verse: { summary, eli5 } } }
   const [verseReports, setVerseReports] = useState(null);
-
   const [activeChapter, setActiveChapter] = useState(1);
-  
-  // Selection State: { c: chapter, v: verse, type: 'goal'|'summary', goalType?: string }
   const [activeSelection, setActiveSelection] = useState(null); 
-  
-  // Track which verses are expanded in the left panel
   const [expandedVerses, setExpandedVerses] = useState(new Set());
-
-  // Resizable sidebar state
-  const [sidebarWidth, setSidebarWidth] = useState(450); // Initial width in px
+  const [sidebarWidth, setSidebarWidth] = useState(450); 
   const sidebarRef = useRef(null);
   const isResizing = useRef(false);
-
   const [error, setError] = useState(null);
 
   // --- Handlers ---
@@ -297,16 +382,6 @@ export default function BibleAnalyzer() {
     reader.readAsText(file);
   };
 
-  const handleUsfmUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-       setUsfmData(parseUSFM(evt.target.result));
-    };
-    reader.readAsText(file);
-  };
-
   const toggleVerseExpansion = (verseNum) => {
     setExpandedVerses(prev => {
       const next = new Set(prev);
@@ -352,20 +427,6 @@ export default function BibleAnalyzer() {
 
   // --- Derived Data Helpers ---
 
-  const getLowestScore = (verseData) => {
-      if (!verseData || !verseData.analysis) return null;
-      const scores = verseData.analysis
-        .map(a => {
-            if (a.type === 'debate') return a.score;
-            if (a.type === 'individual') return a.score;
-            return null;
-        })
-        .filter(s => s != null && !isNaN(s));
-      
-      if (scores.length === 0) return null;
-      return Math.min(...scores);
-  };
-
   const chapters = useMemo(() => {
     if (!usfmData) return [];
     return Object.keys(usfmData).map(Number).sort((a, b) => a - b);
@@ -383,32 +444,7 @@ export default function BibleAnalyzer() {
         const text = chData[vNum];
         const allContexts = analysisData?.[activeChapter]?.[vNum] || [];
         
-        // Group by Goal Type to show unique items in accordion
-        const groupedGoals = new Map();
-        
-        allContexts.forEach(ctx => {
-            const type = ctx.goal.type;
-            if (!groupedGoals.has(type)) {
-                groupedGoals.set(type, {
-                    type: type,
-                    title: ctx.goal.title, // Assuming title corresponds to type
-                    variants: [],
-                    minScore: null
-                });
-            }
-            const group = groupedGoals.get(type);
-            group.variants.push(ctx);
-            
-            // Calc score for this specific variant
-            const s = getLowestScore(ctx.verseData);
-            if (s !== null) {
-                if (group.minScore === null || s < group.minScore) {
-                    group.minScore = s;
-                }
-            }
-        });
-
-        const goals = Array.from(groupedGoals.values());
+        const { goals, totalScore } = getGoalsAndScoreForVerse(allContexts);
 
         // Check if report exists for this verse
         const hasReport = verseReports?.[activeChapter]?.[vNum] !== undefined;
@@ -416,7 +452,8 @@ export default function BibleAnalyzer() {
         return {
           vNum,
           text,
-          goals, // [{ type, title, variants: [...], minScore }, ...]
+          goals,
+          totalScore,
           hasReport
         };
       });
@@ -433,15 +470,20 @@ export default function BibleAnalyzer() {
         const report = verseReports?.[c]?.[v];
         if (!report) return null;
         
+        const allContexts = analysisData?.[c]?.[v] || [];
+        const { goals, totalScore } = getGoalsAndScoreForVerse(allContexts);
+        
         // Find a representative Greek source from analysisData if available
-        const greekSource = analysisData?.[c]?.[v]?.[0]?.verseData?.biblical_text;
+        const greekSource = allContexts[0]?.verseData?.biblical_text;
 
         return {
             type: 'summary',
             c, v,
             verseText,
             greekSource,
-            data: report // { summary, eli5 }
+            data: report, // { summary, eli5 }
+            goals,
+            totalScore
         };
     }
 
@@ -452,11 +494,11 @@ export default function BibleAnalyzer() {
         const matchingContexts = verseGoals.filter(ctx => ctx.goal.type === goalType);
         
         if (matchingContexts.length === 0) return null;
-
+        const { goals, totalScore } = getGoalsAndScoreForVerse(matchingContexts);
         return {
             type: 'goal',
             c, v,
-            goal: matchingContexts[0].goal, // Use goal metadata from first match
+            goal: {...matchingContexts[0].goal, score: totalScore}, // Use goal metadata from first match,
             variants: matchingContexts // Array of { goal, verseData }
         };
     }
@@ -469,7 +511,8 @@ export default function BibleAnalyzer() {
 
   const VerseSummaryView = ({ selection }) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const { data, c, v, verseText, greekSource } = selection;
+    const [showTopics, setShowTopics] = useState(false);
+    const { data, c, v, verseText, greekSource, goals, totalScore } = selection;
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -492,6 +535,41 @@ export default function BibleAnalyzer() {
             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
                 <div className="space-y-6">
                     <VerseContextCard greek={greekSource} translation={verseText} />
+
+                    {totalScore !== null && (
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                             <div className="flex items-center justify-between mb-4">
+                                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                     <BarChart2 size={14} />
+                                     Analysis Scores
+                                 </h4>
+                                 {goals.length > 0 && (
+                                     <button
+                                        onClick={() => setShowTopics(!showTopics)}
+                                        className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md"
+                                     >
+                                        {showTopics ? "Hide Topics" : "Show Topics"}
+                                        {showTopics ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                     </button>
+                                 )}
+                             </div>
+
+                             <ScoreBar score={totalScore} label="Overall Score" isTotal={true} />
+
+                             {showTopics && (
+                                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                      {goals.map(g => (
+                                          <ScoreBar 
+                                            key={g.type} 
+                                            score={g.minScore} 
+                                            label={g.title || g.type} 
+                                            onClick={() => setActiveSelection({ c, v, type: 'goal', goalType: g.type })}
+                                          />
+                                      ))}
+                                 </div>
+                             )}
+                        </div>
+                    )}
 
                     <hr className="border-gray-100 my-4" />
 
@@ -658,6 +736,9 @@ export default function BibleAnalyzer() {
                             {verseData.notes}
                         </div>
                     )}
+
+
+                    <ScoreBar score={selection.goal.score} label={`Score`} isTotal={true} />
 
                     <hr className="border-gray-100 my-4" />
 
@@ -828,7 +909,7 @@ export default function BibleAnalyzer() {
 
             {/* Verse Navigation List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {currentVerses.map(({ vNum, text, goals, hasReport }) => {
+              {currentVerses.map(({ vNum, text, goals, totalScore, hasReport }) => {
                 const isExpanded = expandedVerses.has(vNum);
                 const hasSelectionInThisVerse = activeSelection?.c === activeChapter && activeSelection?.v === vNum;
                 const isSummarySelected = hasSelectionInThisVerse && activeSelection?.type === 'summary';
@@ -874,17 +955,18 @@ export default function BibleAnalyzer() {
                                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </button>
                                 
-                                {/* Badges for Available Goal Types */}
+                                {/* Total Score Badge */}
                                 <div className="flex flex-wrap gap-1 justify-end">
-                                    {goals.map((g, i) => (
+                                    {totalScore !== null ? (
                                         <span 
-                                          key={i} 
-                                          className={`w-6 h-4 flex items-center justify-center text-[9px] font-bold rounded ${getScoreBadgeColor(g.minScore)}`}
-                                          title={`${g.title}: Min Score ${g.minScore}`}
+                                          className={`px-2 py-0.5 flex items-center justify-center text-xs font-bold rounded ${getScoreBadgeColor(totalScore)}`}
+                                          title={`Total Average Score: ${totalScore}`}
                                         >
-                                          {getGoalShortName(g.type)}
+                                          {totalScore}
                                         </span>
-                                    ))}
+                                    ) : (
+                                        goals.length > 0 && <span className="text-xs text-gray-400">-</span>
+                                    )}
                                 </div>
                              </div>
                          </div>
