@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from autogen_agentchat.agents import AssistantAgent
 from autogen_core.models import ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
@@ -9,6 +9,8 @@ key = os.getenv("OPENAI_API_KEY")
 CLIENT_MODEL = "gpt-5-mini"
 
 class CriticReview(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     """
     Structured output schema for the Linguistic Critic's review using a boolean.
     """
@@ -17,15 +19,15 @@ class CriticReview(BaseModel):
 
 class CriticAgent:
 
-    def __init__(self, critic_model):
+    def __init__(self, critic_model, biblical_language="greek"):
         self.name = "LINGUISTIC_CRITIC"
-        self.system_message="""
+        self.system_message=f"""
         You are the Linguistic Critic. Your role is to rigorously review a submitted translation analysis.
         
         Your ONLY criteria for approval are that:
             1. The analysis must be based on verifiable linguistic, stylistic, or semantic arguments.
             2. Words and phrases being analyzed **MUST** be present in the texts being analyzed.
-            3. The analysis must be limited **ONLY** to how the Greek snippet under discussion is handled in the translation (the translation will be a complete verse, the snippet is only one section of the original text).
+            3. The analysis must be limited **ONLY** to how the {biblical_language.capitalize()} snippet under discussion is handled in the translation (the translation will be a complete verse, the snippet is only one section of the original text).
         
         You **MUST** output your response as a single JSON object with two fields: 'accepted' (boolean) and 'reasoning' (string).
         
@@ -45,6 +47,7 @@ class CriticAgent:
                 "type": "json_schema",
                 "json_schema": {
                     "name": "critic_review",
+                    "strict": True,
                     "schema": CriticReview.model_json_schema()
                 }
             }

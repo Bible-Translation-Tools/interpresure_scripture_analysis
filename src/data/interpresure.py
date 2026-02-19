@@ -64,6 +64,9 @@ class Interpresure:
     _files = {
         "phm": {
             "1": "../interpresure/interpresure_phm.csv"
+        },
+        "php": {
+            "1": "../interpresure/interpresure_php_1.csv"
         }
     }
 
@@ -101,10 +104,13 @@ class Interpresure:
 
     def get_annotations(self, topic: str, include_notes = True) -> DataFrame:
         columns = self.groups[topic]["columns"].copy()
-        columns += ["token_id", "book", "chapter", "verse", "greek_text"]
+        columns += ["token_id", "book", "chapter", "verse", "biblical_text"]
         if include_notes:
             columns += ["notes"]
-        return self.interpresure[columns]
+        
+        df = self.interpresure.reindex(columns=columns)[columns]
+        df = df.fillna("No Annotation")
+        return df
 
     def get_annotations_markdown(self, topic: str, chapter: int, verse: int, include_notes = True) -> str:
 
@@ -116,7 +122,7 @@ class Interpresure:
         pragmatic_annotations = "\n## Pragmatic Expert Annotations:\n"
 
         for _, row in iterr:
-            pragmatic_annotations += f"### {row['greek_text']}\n"
+            pragmatic_annotations += f"### {row['biblical_text']}\n"
             pragmatic_annotations += "\n".join([f"- {x}: {row[x]} " for x in self.get_topic_columns(topic)])
             pragmatic_annotations += "\n"
 

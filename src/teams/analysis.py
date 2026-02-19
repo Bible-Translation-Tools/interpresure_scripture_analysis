@@ -22,6 +22,7 @@ class LinguisticAnalysis:
         "type": "json_schema",
         "json_schema": {
             "name": "linguist_review",
+            "strict": True,
             "schema": LinguistReview.model_json_schema()
         }
     }
@@ -31,8 +32,11 @@ class LinguisticAnalysis:
         interpresure: Interpresure, 
         topic: str, 
         linguist_models: list[str], 
-        critic_model: str
+        critic_model: str,
+        biblical_language="greek"
     ):
+        
+        self.biblical_language = biblical_language
 
         self.interpresure = interpresure
 
@@ -42,7 +46,7 @@ class LinguisticAnalysis:
         categories = interpresure.get_topic_categories(topic)
 
         self.task_description = f"""
-            Your task is to assign a score (1-10, where 10 is best) to the translation with respect to {topic_title} from the Greek source.
+            Your task is to assign a score (1-10, where 10 is best) to the translation with respect to {topic_title} from the {biblical_language.capitalize()} source.
             {topic_description}.
             {topic_title} includes the following categories: {categories}.
             {topic_goal}.
@@ -55,7 +59,7 @@ class LinguisticAnalysis:
 
         configs = [get_config_for_model(model) for model in linguist_models]
         self.linguists = [LinguistAgent(f"{model_config['name'].upper()}_LINGUIST", model_config["model"], model_config["key"], model_config["base_url"], self.task_description, self.response_format) for model_config in configs]
-        self.critic = CriticAgent(critic_model)
+        self.critic = CriticAgent(critic_model, biblical_language)
 
 
     async def _perform_analysis_and_review(self, linguist, analysis_prompt):
@@ -122,10 +126,10 @@ class LinguisticAnalysis:
     async def run(
         self, 
         translated_scripture_dict: dict,
-        greek_scripture_dict: dict, 
+        biblical_scripture_dict: dict, 
         book, 
         topic, 
-        sample: int = None
+        sample: int = None,
     ) -> DataFrame:
         print(f"Running analysis for: {book}, {topic}")
 
@@ -144,19 +148,19 @@ class LinguisticAnalysis:
                 print(f"ERROR! Chapter {chapter} Verse {verse} not in the translation corpus!")
                 continue
 
-            if (chapter, verse) not in greek_scripture_dict:
-                print(f"ERROR! Chapter {chapter} Verse {verse} not in the greek corpus!")
+            if (chapter, verse) not in biblical_scripture_dict:
+                print(f"ERROR! Chapter {chapter} Verse {verse} not in the {self.biblical_language} corpus!")
                 continue
 
             pragmatic_annotations = self.interpresure.get_annotations_markdown(topic, int(chapter), int(verse))
             translated_text = translated_scripture_dict[(chapter, verse)]
-            greek_text = greek_scripture_dict[(chapter, verse)]
+            biblical_text = biblical_scripture_dict[(chapter, verse)]
         
 
             for linguist in self.linguists:
                 critique = await self._perform_analysis_and_review(
                     linguist,
-                    linguist._construct_prompt(pragmatic_annotations, translated_text, greek_text)
+                    linguist._construct_prompt(pragmatic_annotations, translated_text, biblical_text)
                 )
 
                 print(f"--- {linguist.name} Analysis {book} {chapter}:{verse} ---")
@@ -170,7 +174,7 @@ class LinguisticAnalysis:
                         "agent_name": linguist.name,
                         "chapter": chapter,
                         "verse": verse,
-                        "greek_text": greek_text,
+                        "biblical_text": biblical_text,
                         "translation": translated_text,
                         # "notes": row['notes'],
                         "score": critique["score"],

@@ -32,13 +32,16 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 TRANSLATION_NAME = "ulb"
 LANGUAGE = "en"
-book_number = 58
-book = "PHM"
+book_number = 51
+book = "PHP"
 chapter = 1
 topics = ["implicature", "structure", "social", "scales"]
 
+biblical_language = "greek"
+
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 greek_filename = f"../lang/grc/{book_number}-{book}.usfm"
+hebrew_filename = f"../lang/heb/{book_number}-{book}.usfm"
 
 # Parse a file
 verses = parse_usfm_file(filename)
@@ -66,6 +69,7 @@ except FileNotFoundError:
 TRANSLATED_SCRIPTURE_DICT = {}
 GREEK_SCRIPTURE_DICT = {}
 
+
 for _, row in df.iterrows():
     c = int(row['chapter'])
     verse = int(row['verse'])
@@ -76,10 +80,10 @@ for _, row in df.iterrows():
     TRANSLATED_SCRIPTURE_DICT[(c, verse)] = text
     GREEK_SCRIPTURE_DICT[(c, verse)] =  greek_text
 
-linguist_models = ["gemini-3-pro-preview", "gpt-5.2"]
+linguist_models = ["gemini-3-pro-preview", "gpt-5.2", "claude-opus-4-6"]
 
 async def run_debate(initial_analysis, interpresure, topic):
-    debate = Debate(linguist_models)
+    debate = Debate(linguist_models, biblical_language=biblical_language)
     return await debate.process_interleaved_dataframe(initial_analysis, interpresure, topic)
 
 from report.coalesce import coalesce_csvs
@@ -97,35 +101,33 @@ async def run_analysis():
 
         interpresure = Interpresure(book, 1)
 
-        interpresure.get_annotations_markdown("scales", "phm", 1, 1)
-
-        #initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini").run(TRANSLATED_SCRIPTURE_DICT, GREEK_SCRIPTURE_DICT, book, topic, 1)
-        initial = pd.read_csv(opening_statement_file)
+        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini", biblical_language).run(TRANSLATED_SCRIPTURE_DICT, GREEK_SCRIPTURE_DICT, book, topic, 1)
+        # initial = pd.read_csv(opening_statement_file)
         
-        # debate = await run_debate(initial, interpresure, topic)
-        debate = pd.read_csv(debate_file)
+        debate = await run_debate(initial, interpresure, topic)
+        # debate = pd.read_csv(debate_file)
 
-        # initial.to_csv(opening_statement_file)
-        # debate.to_csv(debate_file)
+        initial.to_csv(opening_statement_file)
+        debate.to_csv(debate_file)
 
         annotation_columns = interpresure.get_topic_columns(topic)
 
         eval_file = f"../out/{LANGUAGE}/{book}/{book}_{topic}_analysis.json"
 
-    #     eval = coalesce_csvs(
-    #         individual_path=opening_statement_file, 
-    #         debate_path=debate_file, 
-    #         output_path=eval_file, 
-    #         interpresure=interpresure, 
-    #         topic=topic, 
-    #         book=book, 
-    #         translation_title=TRANSLATION_NAME, 
-    #         translation_language=LANGUAGE, 
-    #         translation_usfm=translation_usfm
-    #     )
-    #     evaluations.append(eval)
+        eval = coalesce_csvs(
+            individual_path=opening_statement_file, 
+            debate_path=debate_file, 
+            output_path=eval_file, 
+            interpresure=interpresure, 
+            topic=topic, 
+            book=book, 
+            translation_title=TRANSLATION_NAME, 
+            translation_language=LANGUAGE, 
+            translation_usfm=translation_usfm
+        )
+        evaluations.append(eval)
 
-    # final = finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
+    final = finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
     with open(final_output_file, "r") as fp:
         final = json.loads(fp.read())
 

@@ -13,6 +13,7 @@ class SummarizeDebate:
         "type": "json_schema",
         "json_schema": {
             "name": "linguist_review",
+            "strict": True,
             "schema": LinguistTurn.model_json_schema()
         }
     }
@@ -70,7 +71,7 @@ class SummarizeDebate:
                 verse: [
                     {
                         "pragmatic_goal": {...},
-                        "greek": "...",
+                        "biblical_text": "...",
                         "translation": "...",
                         "analysis": [...]
                     },
@@ -90,7 +91,7 @@ class SummarizeDebate:
 
                 grouped[chapter][verse].append({
                     "pragmatic_goal": pragmatic_goal,
-                    "greek": verse_block.get("greek"),
+                    "biblical_text": verse_block.get("biblical_text"),
                     "translation": verse_block.get("translation"),
                     "analysis": verse_block.get("analysis", [])
                 })

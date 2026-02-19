@@ -434,7 +434,7 @@ export default function BibleAnalyzer() {
         if (!report) return null;
         
         // Find a representative Greek source from analysisData if available
-        const greekSource = analysisData?.[c]?.[v]?.[0]?.verseData?.greek;
+        const greekSource = analysisData?.[c]?.[v]?.[0]?.verseData?.biblical_text;
 
         return {
             type: 'summary',
@@ -623,7 +623,7 @@ export default function BibleAnalyzer() {
                           >
                               {variants.map((v, idx) => (
                                   <option key={idx} value={idx}>
-                                      Variant {idx + 1}: {v.verseData.greek.substring(0, 30)}... ({v.verseData.annotations?.[0]?.annotation || 'No Annotation'})
+                                      Variant {idx + 1}: {v.verseData.biblical_text.substring(0, 30)}... ({v.verseData.annotations?.[0]?.annotation || 'No Annotation'})
                                   </option>
                               ))}
                           </select>
@@ -635,7 +635,7 @@ export default function BibleAnalyzer() {
             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
                  <div className="space-y-6">
                     
-                    <VerseContextCard greek={verseData.greek} translation={verseData.translation} />
+                    <VerseContextCard greek={verseData.biblical_text} translation={verseData.translation} />
 
                     {/* Annotations Grid */}
                     {verseData.annotations && verseData.annotations.length > 0 && (

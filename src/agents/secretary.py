@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from autogen_agentchat.agents import AssistantAgent
 from autogen_core.models import ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 class SecretaryResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     agent_name: str = Field(description="The name of the speaker.")
     summary: str = Field(description="Your Markdown formatted summary presented as a linguistic analysis, in English.")
 
@@ -13,6 +15,7 @@ class SecretaryAgent:
         "type": "json_schema",
         "json_schema": {
             "name": "linguist_review",
+            "strict": True,
             "schema": SecretaryResponse.model_json_schema()
         }
     }
