@@ -3,7 +3,7 @@ import asyncio
 import pandas as pd
 import json
 from typing import List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from agents.eli5 import Eli5Agent
 from agents.linguist import LinguistAgent
@@ -18,18 +18,24 @@ from autogen_agentchat.conditions import MaxMessageTermination
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 class LinguistTurn(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     """The structured output for a linguist's turn in the debate."""
     agent_name: str = Field(description="The name of the linguist speaking.")
     argument: str = Field(description="Your Markdown formatted critique, in English. Reference specific peers if agreeing/disagreeing. If this is a closing statement, include all specific details as to justify your score, even if the idea originated from a peer. This field should be a string containing Markdown formatted text.")
     proposed_score: int = Field(description="The score (1-10) you currently advocate for.")
 
 class ModeratorTurn(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     """The output from the moderator."""
     intervene: bool = Field(description="Whether the moderator is stepping in to intervene. False if there is no need to intervene.")
     violators: List[str] = Field(description="The names of the participants who require intervention. Empty if there is no need to intervene.")
     feedback: str = Field(description="Markdown formatted feedback to give the debate participant if there is an intervention. Empty if there is no need to intervene.")
 
 class DebateCommentator(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
     """The final consensus output from the moderator."""
     chapter: int = Field(description="The chapter debated.")
     verse: str = Field(description="The verse debated.")
@@ -39,21 +45,25 @@ class DebateCommentator(BaseModel):
 
 class Debate:
 
-    task_description = f"""
-        You are a participant in a translation debate over how to score a translation of Greek text. 
-        You will debate the other participants and try to come to a consensus as to a score. 
-        Be critical and err on the side of a lower score.
-    """
-
     response_format = {
         "type": "json_schema",
         "json_schema": {
             "name": "linguist_review",
+            "strict": True,
             "schema": LinguistTurn.model_json_schema()
         }
     }
 
-    def __init__(self, linguist_models: list[str], secretary_model = "gpt-5.2", eli5_model = "gpt-5.2", moderator_model="gpt-5-mini"):
+    def __init__(self, linguist_models: list[str], secretary_model = "gpt-5.2", eli5_model = "gpt-5.2", moderator_model="gpt-5-mini", biblical_language="greek"):
+
+        self.biblical_language = biblical_language
+
+        self.task_description = f"""
+            You are a participant in a translation debate over how to score a translation of {biblical_language.capitalize()} text. 
+            You will debate the other participants and try to come to a consensus as to a score. 
+            Be critical and err on the side of a lower score.
+        """
+
         self.moderator_model = moderator_model
         configs = [get_config_for_model(model) for model in linguist_models]
         self.linguists = [LinguistAgent(f"{model_config['name'].upper()}_LINGUIST", model_config["model"], model_config["key"], model_config["base_url"], self.task_description, self.response_format) for model_config in configs]
@@ -68,23 +78,24 @@ class Debate:
         """
         Runs a RoundRobin debate for a single group of 3 dataframe rows (one verse).
         """
+
         # Extract metadata from the first row of the group
         chapter = group_df.iloc[0]['chapter']
         verse = group_df.iloc[0]['verse']
-        greek_text = group_df.iloc[0]['greek_text']
+        biblical_text = group_df.iloc[0]["biblical_text"]
         translation = group_df.iloc[0]['translation']
-        annotation_columns = interpresure.get_topic_columns(topic)
+        # annotation_columns = interpresure.get_topic_columns(topic)
 
         print(f"\n--- 🗣️  Initiating Debate for {chapter} {verse} ---")
 
         # 1. Construct the Context from the DataFrame Rows
         # We map the specific agent names to their previous independent analysis
         initial_context = f"## Debate Context for {chapter} {verse}\n"
-        initial_context += f"**Greek Text** {greek_text}\n\n"
+        initial_context += f"**{self.biblical_language.capitalize()} Text** {biblical_text}\n\n"
         initial_context += f"** Translation ** {translation}\n\n"
 
-        for col in annotation_columns:
-            initial_context += f"## **{col}** {group_df.iloc[0][col]}\n\n"
+        # for col in annotation_columns:
+        #     initial_context += f"## **{col}** {group_df.iloc[0][col]}\n\n"
 
         initial_context += "### Initial Independent Analyses:\n"
 
@@ -111,15 +122,15 @@ class Debate:
             key=moderator_model_config["key"]
         )
 
-        pragmatic_annotations = "\n".join([f"- {x}: {group_df.iloc[0][x]} " for x in annotation_columns])
+        pragmatic_annotations = interpresure.get_annotations_markdown(topic, chapter, verse)
 
         moderator = AssistantAgent(
             name="Moderator", 
             model_client=moderator_client, 
             system_message=f"""
             You are a moderator of a debate between linguists. 
-            The linguists are supposed to be discussing a translation of Greek with respect to how the translation handles one particular section of the original text: 
-            >>> {greek_text}
+            The linguists are supposed to be discussing a translation of {self.biblical_language.capitalize()} with respect to how the translation handles one particular section of the original text: 
+            >>> {biblical_text}
 
             The translation being evaluated is as follows:
             >>> {translation}
@@ -132,7 +143,7 @@ class Debate:
             ONLY Intervene as a moderator if a linguist's response **DOES NOT** meet the following criteria:
             1. The analysis must be based on verifiable linguistic, stylistic, or semantic arguments.
             2. Words and phrases being analyzed **MUST** be present in the texts being analyzed.
-            3. While the translation **WILL** include the translation of a full verse, the debate must **ONLY** be focused on how the translation handles the particular Greek word or phrase under discussion.
+            3. While the translation **WILL** include the translation of a full verse, the debate must **ONLY** be focused on how the translation handles the particular {self.biblical_language.capitalize()} word or phrase under discussion.
             """
         )
 
@@ -176,13 +187,13 @@ class Debate:
         row_data = {
             'chapter': chapter,
             'verse': verse,
-            'greek_text': greek_text,
+            'biblical_text': biblical_text,
             'translation': translation,
             "debate": json.dumps(debate),
             "closing_statements": json.dumps(closing_statements),
             "summary": summary,
             "eli5": eli5
-        } | { x: group_df.iloc[0][x] for x in annotation_columns}
+        }# | { x: group_df.iloc[0][x] for x in annotation_columns}
         
         return pd.DataFrame([row_data])
 
@@ -210,7 +221,7 @@ class Debate:
                 print(consensus_data)
                 final_results.append(consensus_data)
             except Exception as e:
-                print("Error! rate limit, trying again...", e)
+                print("Error! rate limit, trying again...", e.with_traceback)
                 time.sleep(61 * 5)
                 print("INFO: retrying")
                 await run(group_df)

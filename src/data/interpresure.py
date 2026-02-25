@@ -4,19 +4,9 @@ import pandas as pd
 
 class Interpresure:
 
-    topics = ["logical", "implicature", "structure", "social", "scalar"]
+    topics = ["implicature", "structure", "social", "scales"]
 
     groups = {
-        "logical": {
-            "title": """Logic and Assertion""",
-            "description": "These columns define the 'reality' and truth-conditions of a statement. They track whether a claim is presented as a fact, a possibility, or an obligation.",
-            "columns": [
-                "veridicality",
-                "modality",
-                "entailment_pattern"
-            ],
-            "goal": "Ensure the translation preserves the same degree of certainty and logical commitment as the original. A shift from a suggestion to a command, or from a certainty to a possibility, alters the fundamental logic of the discourse."
-        },
         "implicature": {
             "title": """Implicature and Inference""",
             "description": "This group captures meaning that is communicated indirectly. It tracks what the reader must 'read between the lines' based on context and shared knowledge.",
@@ -37,7 +27,10 @@ class Interpresure:
             "columns": [
                 "information_structure",
                 "question_under_discussion",
-                "predication_type"
+                "predication_type",
+                "veridicality",
+                "modality",
+                "entailment_pattern"
             ],
             "goal": "Maintain the original thematic focus and emphasis. If the source text highlights a specific concept through word order or phrasing, the translation should use equivalent target-language mechanics to ensure the same 'center of gravity' for the sentence."
         },
@@ -53,8 +46,8 @@ class Interpresure:
             ],
             "goal": "Preserve the interpersonal 'vibe' of the communication. This ensures that the translation accurately reflects the author's level of deference, authority, or solidarity, preventing a respectful request from sounding like a cold demand."
         },
-        "scalar": {
-            "title": """Scalar and Contrast""",
+        "scales": {
+            "title": """Scales and Contrast""",
             "description": "This group deals with relative values and sets of alternatives. It tracks comparisons where things are weighed against each other on a scale of importance or magnitude.",
             "columns": [
                 "is_scalar",
@@ -71,6 +64,9 @@ class Interpresure:
     _files = {
         "phm": {
             "1": "../interpresure/interpresure_phm.csv"
+        },
+        "php": {
+            "1": "../interpresure/interpresure_php_1.csv"
         }
     }
 
@@ -108,7 +104,26 @@ class Interpresure:
 
     def get_annotations(self, topic: str, include_notes = True) -> DataFrame:
         columns = self.groups[topic]["columns"].copy()
-        columns += ["token_id", "book", "chapter", "verse", "greek_text"]
+        columns += ["token_id", "book", "chapter", "verse", "biblical_text"]
         if include_notes:
             columns += ["notes"]
-        return self.interpresure[columns]
+        
+        df = self.interpresure.reindex(columns=columns)[columns]
+        df = df.fillna("No Annotation")
+        return df
+
+    def get_annotations_markdown(self, topic: str, chapter: int, verse: int, include_notes = True) -> str:
+
+        df = self.get_annotations(topic, include_notes)
+
+        grouped_data = df[(df['chapter'] == chapter) & (df['verse'] == verse)]
+        iterr = grouped_data.iterrows()
+
+        pragmatic_annotations = "\n## Pragmatic Expert Annotations:\n"
+
+        for _, row in iterr:
+            pragmatic_annotations += f"### {row['biblical_text']}\n"
+            pragmatic_annotations += "\n".join([f"- {x}: {row[x]} " for x in self.get_topic_columns(topic)])
+            pragmatic_annotations += "\n"
+
+        return pragmatic_annotations

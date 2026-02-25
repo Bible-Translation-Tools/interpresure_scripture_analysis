@@ -1,101 +1,3 @@
-# import pandas as pd
-# import json
-# import ast
-
-# def parse_list_string(s):
-#     """Parses a string representation of a list (e.g. "['a', 'b']") into an actual list."""
-#     try:
-#         return ast.literal_eval(s)
-#     except (ValueError, SyntaxError):
-#         return []
-
-# def coalesce_csvs(individual_path, debate_path, output_path):
-#     # 1. Load the CSVs
-#     df_individual = pd.read_csv(individual_path)
-#     df_debate = pd.read_csv(debate_path)
-
-#     # 2. Parse complex columns
-#     # The 'closing_statements' column contains strings that look like lists
-#     df_debate['closing_statements'] = df_debate['closing_statements'].apply(parse_list_string)
-
-#     # 3. Extract Top-Level Metadata
-#     # Assuming the "chapter" column in debate CSV actually holds the Book Name (Philemon)
-#     book_name = "Philemon"
-#     # Assuming the "Chapter" column in individual CSV holds the Chapter Number
-#     chapter_num = int(df_individual['Chapter'].iloc[0]) if not df_individual.empty else 1
-    
-#     # 4. Merge Data by Verse
-#     # We find all unique verses present in either file
-#     all_verses = sorted(set(df_individual['Verse']).union(set(df_debate['verse'])))
-
-#     analysis_list = []
-
-#     for verse_num in all_verses:
-#         # Filter rows for the current verse
-#         ind_rows = df_individual[df_individual['Verse'] == verse_num]
-#         deb_row = df_debate[df_debate['verse'] == verse_num]
-
-#         # Extract Verse Metadata (Prioritizing the Individual CSV)
-#         if not ind_rows.empty:
-#             first_row = ind_rows.iloc[0]
-#             greek = first_row.get('Greek_Text', "")
-#             annotation = first_row.get('Face_Annotation', "")
-#             notes = first_row.get('Notes', "")
-#         else:
-#             greek = ""
-#             annotation = ""
-#             notes = ""
-
-#         # Build the 'analysis' array for this verse
-#         inner_analysis = []
-
-#         # Add "Individual" entries
-#         for _, row in ind_rows.iterrows():
-#             inner_analysis.append({
-#                 "type": "individual",
-#                 "model": row["Model"],
-#                 "score": int(row['Score']),
-#                 "reasoning": row['Model_Analysis']
-#             })
-
-#         # Add "Debate" entry (assuming 1 per verse)
-#         if not deb_row.empty:
-#             row = deb_row.iloc[0]
-#             inner_analysis.append({
-#                 "type": "debate",
-#                 "score": int(row['final_consensus_score']),
-#                 "summary": row['consensus_summary'],
-#                 "closing_statements": row['closing_statements']
-#             })
-
-#         # Create the Verse Object
-#         verse_obj = {
-#             "verse": int(verse_num),
-#             "greek": greek,
-#             "annotation": annotation,
-#             "notes": notes,
-#             "analysis": inner_analysis
-#         }
-#         analysis_list.append(verse_obj)
-
-#     # 5. Construct Final JSON Structure
-#     final_json = {
-#         "book": book_name,
-#         "chapter": chapter_num,
-#         "category": "Pauline Epistles", # Placeholder or derived logic
-#         "analysis": analysis_list
-#     }
-
-#     # 6. Save to File
-#     with open(output_path, 'w', encoding='utf-8') as f:
-#         json.dump(final_json, f, indent=2, ensure_ascii=False)
-    
-#     print(f"Successfully created {output_path}")
-
-# # --- Usage ---
-# # coalesce_csvs('individual.csv', 'debate.csv', 'output.json')
-
-
 import pandas as pd
 import json
 import numpy as np
@@ -161,24 +63,24 @@ def coalesce_csvs(
     
     # 3. Process and Group Data
     # We group by these three keys to ensure unique segments are not merged
-    group_cols = ['verse', 'greek_text'] + annotation_columns
+    group_cols = ['verse', 'biblical_text'] # + annotation_columns
     
-    for col in annotation_columns:
-        df_individual[col] = df_individual[col].fillna("Uncategorized")
+    # for col in annotation_columns:
+    #     df_individual[col] = df_individual[col].fillna("Uncategorized")
     
     analysis_list = []
 
     # Iterate through each unique combination of Verse, Text, and Annotation
     grouped = df_individual.groupby(group_cols, sort=False)
 
-    for (verse_num, greek_text, *unfiltered_annotations), ind_rows in grouped:
+    for (verse_num, biblical_text, *unfiltered_annotations), ind_rows in grouped:
         # convert boolean types away from np types which don't serialize
         annotations = [bool(x) if isinstance(x, np.bool) else x for x in unfiltered_annotations]
         
         # Extract segment-specific metadata
         first_row = ind_rows.iloc[0]
         translation = first_row.get('translation', "")
-        notes = first_row.get('notes', "")
+        # notes = first_row.get('notes', "")
 
         inner_analysis = []
 
@@ -195,13 +97,13 @@ def coalesce_csvs(
         # We strip whitespace to ensure matching isn't broken by a stray space
         # 1. Start with your base filters
         mask = (df_debate['verse'] == verse_num) & \
-            (df_debate['greek_text'].str.strip() == greek_text.strip())
+            (df_debate['biblical_text'].str.strip() == biblical_text.strip())
 
-        # 2. Dynamically add filters for every annotation column
-        for col, val in zip(annotation_columns, annotations):
-            # Ensure we handle strings for .strip() if necessary, 
-            # otherwise a direct comparison (df_debate[col] == val) is safer
-            mask &= (df_debate[col].astype(str).str.strip() == str(val).strip())
+        # # 2. Dynamically add filters for every annotation column
+        # for col, val in zip(annotation_columns, annotations):
+        #     # Ensure we handle strings for .strip() if necessary, 
+        #     # otherwise a direct comparison (df_debate[col] == val) is safer
+        #     mask &= (df_debate[col].astype(str).str.strip() == str(val).strip())
 
         deb_rows = df_debate[mask]
 
@@ -269,10 +171,10 @@ def coalesce_csvs(
         # 4. Construct the unique Verse-Segment Object
         verse_obj = {
             "verse": int(verse_num),
-            "greek": greek_text,
+            "biblical_text": biblical_text,
             "translation": translation,
-            "annotations": [{"type": col, "annotation": ann } for (col, ann) in zip(annotation_columns, annotations)],
-            "notes": notes,
+            # "annotations": [{"type": col, "annotation": ann } for (col, ann) in zip(annotation_columns, annotations)],
+            # "notes": notes,
             "analysis": inner_analysis
         }
         analysis_list.append(verse_obj)

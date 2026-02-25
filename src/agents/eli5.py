@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from autogen_agentchat.agents import AssistantAgent
 from autogen_core.models import ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 class Eli5Response(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    
     """The structured output for a simplified summary."""
     agent_name: str = Field(description="The name of the speaker.")
     summary: str = Field(description="Your Markdown formatted summary, in simple English.")
@@ -13,6 +15,7 @@ class Eli5Agent:
     response_format = {
         "type": "json_schema",
         "json_schema": {
+            "strict": True,
             "name": "linguist_review",
             "schema": Eli5Response.model_json_schema()
         }
