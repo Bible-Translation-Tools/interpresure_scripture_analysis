@@ -32,12 +32,13 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 TRANSLATION_NAME = "ulb"
 LANGUAGE = "en"
-book_number = 51
-book = "PHP"
-chapter = 1
-topics = ["implicature", "structure", "social", "scales"]
+book_number = 19
+book = "PSA"
+chapter = 145
+# topics = ["implicature", "structure", "social", "scales"]
+topics = ["general"]
 
-biblical_language = "greek"
+biblical_language = "hebrew"
 
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 greek_filename = f"../lang/grc/{book_number}-{book}.usfm"
@@ -52,35 +53,42 @@ parser = UsfmParser()
 with open(filename, "r", encoding="utf-8") as f:
     translation_usfm = f.read()
 
-with open(greek_filename, "r", encoding="utf-8") as f:
-    greek_usfm = f.read()
+if biblical_language == "greek":
+    with open(greek_filename, "r", encoding="utf-8") as f:
+        greek_usfm = f.read()
+    greek_verses = parser.parse(greek_usfm)
+    GREEK_SCRIPTURE_DICT = {}
+else:
+    with open(hebrew_filename, "r", encoding="utf-8") as f:
+        hebrew_usfm = f.read()
+    hebrew_verses = parser.parse(hebrew_usfm)
+    HEBREW_SCRIPTURE_DICT = {}
 
 verses = parser.parse(translation_usfm)
-greek_verses = parser.parse(greek_usfm)
 
-# --- 1. Load Ground Truth Data ---
-# This data file was generated in the previous step
-try:
-    df = pd.read_csv("../interpresure/interpresure_phm.csv")
-except FileNotFoundError:
-    print("Error: interpresure_phm.csv not found. Please ensure the data prep step was executed.")
-    exit()
+
+interpresure = Interpresure(book, chapter)
+df = interpresure.get_annotations(topics[0])
 
 TRANSLATED_SCRIPTURE_DICT = {}
-GREEK_SCRIPTURE_DICT = {}
-
 
 for _, row in df.iterrows():
     c = int(row['chapter'])
     verse = int(row['verse'])
     ref = f"{book} {chapter}:{verse}"
     text = verses[ref]
-    greek_text = greek_verses[ref]
+
+    if biblical_language == "greek":
+        greek_text = greek_verses[ref]
+        GREEK_SCRIPTURE_DICT[(c, verse)] =  greek_text
+    else:
+        hebrew_text = hebrew_verses[ref]
+        HEBREW_SCRIPTURE_DICT[(c, verse)] =  hebrew_text
 
     TRANSLATED_SCRIPTURE_DICT[(c, verse)] = text
-    GREEK_SCRIPTURE_DICT[(c, verse)] =  greek_text
 
-linguist_models = ["gemini-3-pro-preview", "gpt-5.2", "claude-opus-4-6"]
+
+linguist_models = ["gemini-3.1-pro-preview", "gpt-5.2"]
 
 async def run_debate(initial_analysis, interpresure, topic):
     debate = Debate(linguist_models, biblical_language=biblical_language)
@@ -99,13 +107,13 @@ async def run_analysis():
         opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_opening_statements_{topic}.csv"
         debate_file = f"../out/{LANGUAGE}/{book}/{book}_debate_output_{topic}.csv"
 
-        interpresure = Interpresure(book, 1)
+        interpresure = Interpresure(book, chapter)
 
-        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini", biblical_language).run(TRANSLATED_SCRIPTURE_DICT, GREEK_SCRIPTURE_DICT, book, topic, 1)
-        # initial = pd.read_csv(opening_statement_file)
+        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini", biblical_language).run(TRANSLATED_SCRIPTURE_DICT, HEBREW_SCRIPTURE_DICT, book, topic)
+        #initial = pd.read_csv(opening_statement_file)
         
         debate = await run_debate(initial, interpresure, topic)
-        # debate = pd.read_csv(debate_file)
+        #debate = pd.read_csv(debate_file)
 
         initial.to_csv(opening_statement_file)
         debate.to_csv(debate_file)

@@ -28,7 +28,7 @@ DEFAULT_CONFIGS = {
 
 def get_config_for_model(model):
     match model:
-        case "gemini-3-pro-preview":
+        case "gemini-3-pro-preview" | "gemini-3.1-pro-preview":
             return DEFAULT_CONFIGS["gemini"] | { "model": model }
         case "gpt-5.2" | "gpt-5-mini":
             return DEFAULT_CONFIGS["openai"] | { "model": model }
