@@ -56,6 +56,14 @@ class Interpresure:
                 "is_exhausted"
             ],
             "goal": "Preserve the 'weight' and trajectory of comparisons. If the author uses a scale to show that one concept is 'even more' important than another, the translation must maintain that upward or downward intensity."
+        },
+        "general": {
+            "title": """Pragmatic Annotations""",
+            "description": "This group contains expert linguistic annotations pertaining to pragmatics.",
+            "columns": [
+                "annotations"
+            ],
+            "goal": "Preserve the pragmatics described by the expert from the original text."
         }
     }
 
@@ -67,6 +75,9 @@ class Interpresure:
         },
         "php": {
             "1": "../interpresure/interpresure_php_1.csv"
+        },
+        "psa": {
+            "145": "../interpresure/interpresure_psa_145.csv"
         }
     }
 
@@ -112,7 +123,7 @@ class Interpresure:
         df = df.fillna("No Annotation")
         return df
 
-    def get_annotations_markdown(self, topic: str, chapter: int, verse: int, include_notes = True) -> str:
+    def get_annotations_markdown(self, topic: str, chapter: int, verse: int, include_notes = False) -> str:
 
         df = self.get_annotations(topic, include_notes)
 

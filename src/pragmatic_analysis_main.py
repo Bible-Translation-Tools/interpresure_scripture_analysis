@@ -11,6 +11,7 @@ from autogen_agentchat.base import TerminationCondition, TerminatedException
 from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
 from autogen_agentchat.messages import StopMessage
 from data.interpresure import Interpresure
+from report import convert_pragmatic_analysis
 from teams.debate import Debate
 from teams.analysis import LinguisticAnalysis
 from agents.critic import CriticAgent
@@ -21,6 +22,7 @@ from usfm2dict import parse_usfm_file, UsfmParser
 from dotenv import load_dotenv
 import os
 
+from teams.pragmatic_analysis import PragmaticAnalysis
 from teams.summarize import SummarizeDebate
 
 load_dotenv()
@@ -35,8 +37,6 @@ LANGUAGE = "en"
 book_number = 19
 book = "PSA"
 chapter = 145
-# topics = ["implicature", "structure", "social", "scales"]
-topics = ["general"]
 
 biblical_language = "hebrew"
 
@@ -68,7 +68,7 @@ verses = parser.parse(translation_usfm)
 
 
 interpresure = Interpresure(book, chapter)
-df = interpresure.get_annotations(topics[0])
+df = interpresure.get_annotations("general")
 
 TRANSLATED_SCRIPTURE_DICT = {}
 
@@ -88,70 +88,38 @@ for _, row in df.iterrows():
     TRANSLATED_SCRIPTURE_DICT[(c, verse)] = text
 
 
-linguist_models = ["gemini-3.1-pro-preview", "gpt-5.2"]
+linguist_model = "gpt-5.2"
 
-async def run_debate(initial_analysis, interpresure, topic):
-    debate = Debate(linguist_models, biblical_language=biblical_language)
-    return await debate.process_interleaved_dataframe(initial_analysis, interpresure, topic)
-
-from report.coalesce import coalesce_csvs
 async def run_analysis():
     os.makedirs(f"../out/{LANGUAGE}/{book}/", exist_ok=True)
 
-
-    final_output_file = f"../out/{LANGUAGE}/{book}/{LANGUAGE}_{book}_complete_analysis.json"
+    final_output_file = f"../out/{LANGUAGE}/{book}/{LANGUAGE}_{book}_pragmatics_analysis.json"
 
     evaluations = []
-    for topic in topics:
 
-        opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_opening_statements_{topic}.csv"
-        debate_file = f"../out/{LANGUAGE}/{book}/{book}_debate_output_{topic}.csv"
+    opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_pragmatic_analysis.csv"
 
-        interpresure = Interpresure(book, chapter)
+    interpresure = Interpresure(book, chapter)
 
-        initial = await LinguisticAnalysis(interpresure, topic, linguist_models, "gpt-5-mini", biblical_language).run(TRANSLATED_SCRIPTURE_DICT, HEBREW_SCRIPTURE_DICT, book, topic)
-        #initial = pd.read_csv(opening_statement_file)
-        
-        debate = await run_debate(initial, interpresure, topic)
-        #debate = pd.read_csv(debate_file)
+    #initial = await PragmaticAnalysis(interpresure, linguist_model, "gpt-5-mini", biblical_language).run(TRANSLATED_SCRIPTURE_DICT, HEBREW_SCRIPTURE_DICT, book)
+    initial = pd.read_csv(opening_statement_file)
+    
+    #initial.to_csv(opening_statement_file)
 
-        initial.to_csv(opening_statement_file)
-        debate.to_csv(debate_file)
 
-        annotation_columns = interpresure.get_topic_columns(topic)
-
-        eval_file = f"../out/{LANGUAGE}/{book}/{book}_{topic}_analysis.json"
-
-        eval = coalesce_csvs(
+    eval_file = f"../out/{LANGUAGE}/{book}/{book}_general_analysis.json"
+    eval = convert_pragmatic_analysis.convert_pragmatic(
             individual_path=opening_statement_file, 
-            debate_path=debate_file, 
             output_path=eval_file, 
             interpresure=interpresure, 
-            topic=topic, 
             book=book, 
-            translation_title=TRANSLATION_NAME, 
-            translation_language=LANGUAGE, 
-            translation_usfm=translation_usfm
         )
-        evaluations.append(eval)
+    evaluations.append(eval)
 
     final = finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
-    with open(final_output_file, "r") as fp:
-        final = json.loads(fp.read())
-
-    reports = await SummarizeDebate().summarize(final)
-    append_reports(final_output_file, final, reports)
-
-import numpy as np
-class NumpyBoolEncoder(json.JSONEncoder):
-    def default(self, obj):
-        # Handle NumPy booleans/numbers
-        if isinstance(obj, np.bool_):
-            return bool(obj)
-        # Handle standard booleans if they were somehow masked
-        if isinstance(obj, bool):
-            return str(obj) # Or just return obj to get JSON true/false
-        return super().default(obj)
+    
+    with open(final_output_file, "w", encoding='utf-8') as f:
+        json.dump(final, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
 
 def finalize(outpath, translation_language, translation_title, translation_usfm, evaulations):
     final = {
@@ -167,11 +135,16 @@ def finalize(outpath, translation_language, translation_title, translation_usfm,
 
     return final
 
-def append_reports(outpath, final, reports, ):
-    final["reports"] = reports
-
-    with open(outpath, "w", encoding='utf-8') as f:
-        json.dump(final, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
+import numpy as np
+class NumpyBoolEncoder(json.JSONEncoder):
+    def default(self, obj):
+        # Handle NumPy booleans/numbers
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        # Handle standard booleans if they were somehow masked
+        if isinstance(obj, bool):
+            return str(obj) # Or just return obj to get JSON true/false
+        return super().default(obj)
 
 
 if __name__ == "__main__":

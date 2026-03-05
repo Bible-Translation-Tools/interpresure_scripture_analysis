@@ -280,7 +280,7 @@ const VerseContextCard = ({ greek, translation }) => (
             {greek && (
                 <div>
                     <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-400 tracking-wider mb-1">
-                        <BookOpen size={10} /> Source (Greek)
+                        <BookOpen size={10} /> Source Text
                     </span>
                     <p className="font-serif text-lg text-gray-800 leading-snug bg-white/60 p-2 rounded border border-blue-100/50">
                         {greek}
