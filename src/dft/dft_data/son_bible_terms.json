@@ -1,0 +1,599 @@
+[
+    {
+        "verse_reference": "MAT 2:15",
+        "greek": "Ἐξ Αἰγύπτου ἐκάλεσα τὸν υἱόν μου",
+        "english": "Out of Egypt I have called my son"
+    },
+    {
+        "verse_reference": "MAT 3:17",
+        "greek": "Οὗτός ἐστιν ὁ υἱός μου ὁ ἀγαπητός",
+        "english": "This is my beloved Son",
+        "notes": "Similar to MRK 1:11; LUK 3:22",
+        "match_ref": ["MRK 1:11", "LUK 3:22"]
+    },
+    {
+        "verse_reference": "MAT 4:3",
+        "match_ref": ["LUK 4:3"],
+        "greek": "Εἰ υἱὸς εἶ τοῦ θεοῦ",
+        "english": "If you are the \nSon of God",
+        "notes":  "Similar to LUK 4:3"
+    },
+    {
+        "verse_reference": "MAT 4:6",
+        "match_ref": ["LUK 4:9"],
+        "greek": "Εἰ υἱὸς εἶ τοῦ θεοῦ",
+        "english": "If you are the \nSon of God"
+    },
+    {
+        "verse_reference": "MAT 8:29",
+        "greek": "Τί ἡμῖν καὶ σοί, υἱὲ τοῦ θεοῦ",
+        "english": "What do we have to do with you, Son of \nGod"
+    },
+    {
+        "verse_reference": "MAT 11:27",
+        "greek": "καὶ οὐδεὶς ἐπιγινώσκει τὸν υἱὸν εἰ μὴ ὁ πατήρ …  ὁ υἱὸς ... ὁ υἱὸς",
+        "english": "no one knows the Son except the Father … the \nSon … the \nSon",
+        "notes": "Similar to LUK 10:22",
+        "match_ref": ["LUK 10:22"]
+    },
+    {
+        "verse_reference": "MAT 14:33",
+        "greek": "Ἀληθῶς θεοῦ \nυἱὸς εἶ",
+        "english": "Truly you are the Son of \nGod"
+    },
+    {
+        "verse_reference": "MAT 16:16",
+        "greek": "ὁ Χριστὸς ὁ υἱὸς τοῦ θεοῦ τοῦ ζῶντος",
+        "english": "the Christ, the Son of the living God"
+    },
+    {
+        "verse_reference": "MAT 17:5",
+        "match_ref": ["MRK 9:7", "LUK 9:35"],
+        "greek": "Οὗτός ἐστιν ὁ υἱός μου ὁ ἀγαπητός",
+        "english": "This is my beloved Son"
+    },
+    {
+        "verse_reference": "MAT 24:36",
+        "match_ref": ["MRK 13:32"],
+        "greek": "οὐδὲ ὁ υἱός, εἰ μὴ ὁ πατὴρ μόνος",
+        "english": "nor the Son, but only the \nFather"
+    },
+    {
+        "verse_reference": "MAT 26:63",
+        "match_ref": ["MRK 14:61", "LUK 22:70"],
+        "greek": "ὁ Χριστὸς ὁ υἱὸς τοῦ θεοῦ",
+        "english": "the Christ, the \nSon of God"
+    },
+    {
+        "verse_reference": "MAT 27:40",
+        "greek": "εἰ υἱὸς εἶ τοῦ θεοῦ",
+        "english": "If you are the \nSon of God"
+    },
+    {
+        "verse_reference": "MAT 27:43",
+        "greek": "Θεοῦ εἰμι υἱός",
+        "english": "I am the Son of God"
+    },
+    {
+        "verse_reference": "MAT 27:54",
+        "match_ref": ["MRK 15:39"],
+        "greek": "θεοῦ υἱὸς ἦν οὗτος",
+        "english": "this was the Son of God"
+    },
+    {
+        "verse_reference": "MAT 28:19",
+        "greek": "εἰς τὸ ὄνομα … τοῦ υἱοῦ",
+        "english": "into the name of ... the Son"
+    },
+    {
+        "verse_reference": "MRK 1:1",
+        "greek": "Ἰησοῦ Χριστοῦ υἱοῦ θεοῦ",
+        "english": "Jesus Christ, the Son of \nGod"
+    },
+    {
+        "verse_reference": "MRK 1:11",
+        "match_ref": ["MAT 3:17", "LUK 3:22"],
+        "greek": "Σὺ εἶ ὁ υἱός μου ὁ ἀγαπητός",
+        "english": "You are my beloved Son"
+    },
+    {
+        "verse_reference": "MRK 3:11",
+        "match_ref": ["LUK 4:41"],
+        "greek": "Σὺ εἶ ὁ υἱὸς τοῦ θεοῦ",
+        "english": "You are the \nSon of God."
+    },
+    {
+        "verse_reference": "MRK 5:7",
+        "match_ref": ["LUK 8:28"],
+        "greek": "Ἰησοῦ υἱὲ τοῦ θεοῦ τοῦ ὑψίστου",
+        "english": "Jesus, Son of the Most High \nGod"
+    },
+    {
+        "verse_reference": "MRK 9:7",
+        "match_ref": ["MAT 17:5", "LUK 9:35"],
+        "greek": "Οὗτός ἐστιν ὁ υἱός μου ὁ ἀγαπητός",
+        "english": "This is my beloved Son"
+    },
+    {
+        "verse_reference": "MRK 13:32",
+        "match_ref": ["MAT 24:36"],
+        "greek": "οὐδὲ ὁ υἱός, εἰ μὴ ὁ πατήρ",
+        "english": "nor the Son, but the Father"
+    },
+    {
+        "verse_reference": "MRK 14:61",
+        "match_ref": ["MAT 26:63", "LUK 22:70"],
+        "greek": "Σὺ εἶ ὁ Χριστὸς ὁ υἱὸς τοῦ εὐλογητοῦ",
+        "english": "Are you the Christ, the Son of the Blessed \nOne"
+    },
+    {
+        "verse_reference": "MRK 15:39",
+        "match_ref": ["MAT 27:54"],
+        "greek": "Ἀληθῶς οὗτος ὁ ἄνθρωπος υἱὸς θεοῦ ἦν",
+        "english": "Truly this man was the Son of God"
+    },
+    {
+        "verse_reference": "LUK 1:32",
+        "greek": "υἱὸς ὑψίστου κληθήσεται",
+        "english": "he will be called Son of the Most High"
+    },
+    {
+        "verse_reference": "LUK 1:35",
+        "greek": "κληθήσεται υἱὸς θεοῦ",
+        "english": "will be called the Son of \nGod"
+    },
+    {
+        "verse_reference": "LUK 3:22",
+        "match_ref": ["MAT 3:17", "MRK 1:11"],
+        "greek": "Σὺ εἶ ὁ υἱός μου",
+        "english": "You are my \nSon"
+    },
+    {
+        "verse_reference": "LUK 4:3",
+        "match_ref": ["MAT 4:3"],
+        "greek": "Εἰ υἱὸς εἶ τοῦ θεοῦ",
+        "english": "If you are the \nSon of God"
+    },
+    {
+        "verse_reference": "LUK 4:9",
+        "match_ref": ["MAT 4:6"],
+        "greek": "Εἰ υἱὸς εἶ τοῦ θεοῦ",
+        "english": "If you are the \nSon of God"
+    },
+    {
+        "verse_reference": "LUK 4:41",
+        "match_ref": ["MRK 3:11"],
+        "greek": "Σὺ εἶ ὁ υἱὸς τοῦ θεοῦ",
+        "english": "You are the \nSon of God"
+    },
+    {
+        "verse_reference": "LUK 8:28",
+        "match_ref": ["MRK 5:7"],
+        "greek": "Ἰησοῦ υἱὲ τοῦ θεοῦ τοῦ ὑψίστου",
+        "english": "Jesus, Son of the Most High \nGod"
+    },
+    {
+        "verse_reference": "LUK 9:35",
+        "match_ref": ["MAT 17:5", "MRK 9:7"],
+        "greek": "Οὗτός ἐστιν ὁ υἱός μου",
+        "english": "This is my Son"
+    },
+    {
+        "verse_reference": "LUK 10:22",
+        "match_ref": ["MAT 11:27"],
+        "greek": "οὐδεὶς γινώσκει τίς ἐστιν ὁ υἱὸς εἰ μὴ ὁ πατήρ … ὁ υἱὸς … ὁ υἱὸς",
+        "english": "no one knows who the Son is except the Father … the \nSon ... the \nSon"
+    },
+    {
+        "verse_reference": "LUK 22:70",
+        "match_ref": ["MAT 26:63", "MRK 14:61"],
+        "greek": "Σὺ οὖν εἶ ὁ υἱὸς τοῦ θεοῦ",
+        "english": "Then you are the Son of \nGod"
+    },
+    {
+        "verse_reference": "JHN 1:14",
+        "greek": "δόξαν ὡς μονογενοῦς παρὰ πατρός \nThe word μονογενοῦς means “only begotten,” “or “one and only.” This refers to the Son.",
+        "english": "glory as of the one and only who came from the Father",
+        "notes": "The word “Son” does not appear in the original \nlanguage. Some versions of the Bible include “Son” to make the meaning clear. If translators do put in \"Son,\" it should be the same as what they use for the Son of God."
+    },
+    {
+        "verse_reference": "JHN 1:18",
+        "greek": "θεὸν οὐδεὶς ἑώρακεν πώποτε· μονογενὴς θεὸς ὁ ὢν εἰς τὸν κόλπον τοῦ πατρὸς ἐκεῖνος ἐξηγήσατο  \nThe words μονογενὴς θεὸς mean “only begotten God” or “one and only God.” This refers to the Son.",
+        "english": "No one has ever seen God; the only God, who is at the Father's side, he has made God known",
+        "notes": "The word “Son” appears in only some ancient copies of the original text. Some modern versions of the Bible include “Son” to make the meaning clear. If translators do put in \"Son,\" it should be the same as what they use for the Son of God."
+    },
+    {
+        "verse_reference": "JHN 1:34",
+        "greek": "οὗτός ἐστιν ὁ υἱὸς τοῦ θεοῦ",
+        "english": "this is the Son of God",
+        "notes": "Some versions of the Bible have “the Chosen one” \ninstead of “the Son.” If translators do put in \"Son,\" it should be the same as what they use for the Son of God."
+    },
+    {
+        "verse_reference": "JHN 1:49",
+        "greek": "σὺ εἶ ὁ υἱὸς τοῦ θεοῦ",
+        "english": "you are the \nSon of God"
+    },
+    {
+        "verse_reference": "JHN 3:16",
+        "greek": "τὸν υἱὸν τὸν μονογενῆ ἔδωκεν",
+        "english": "he gave his only Son"
+    },
+    {
+        "verse_reference": "JHN 3:17",
+        "greek": "οὐ γὰρ ἀπέστειλεν ὁ θεὸς τὸν υἱὸν εἰς τὸν κόσμον ἵνα κρίνῃ τὸν κόσμον",
+        "english": "For God did not send the Son into the world in order to condemn the world"
+    },
+    {
+        "verse_reference": "JHN 3:18",
+        "greek": "μὴ πεπίστευκεν εἰς τὸ ὄνομα τοῦ μονογενοῦς υἱοῦ τοῦ θεοῦ",
+        "english": "he has not believed in the name of the only Son of \nGod"
+    },
+    {
+        "verse_reference": "JHN 3:35",
+        "greek": "ὁ πατὴρ ἀγαπᾷ τὸν υἱὸν",
+        "english": "The Father loves the Son"
+    },
+    {
+        "verse_reference": "JHN 3:36",
+        "greek": "ὁ πιστεύων εἰς τὸν υἱὸν ἔχει ζωὴν αἰώνιον … τῷ υἱῷ",
+        "english": "He who \nbelieves in the Son has \neternal life … the Son"
+    },
+    {
+        "verse_reference": "JHN 5:19",
+        "greek": "οὐ δύναται ὁ υἱὸς ποιεῖν ἀφʼ ἑαυτοῦ οὐδὲν \n... ὁ υἱὸς",
+        "english": "the Son can do nothing of himself … the \nSon"
+    },
+    {
+        "verse_reference": "JHN 5:20",
+        "greek": "ὁ γὰρ πατὴρ φιλεῖ τὸν υἱὸν",
+        "english": "For the Father loves the Son"
+    },
+    {
+        "verse_reference": "JHN 5:21",
+        "greek": "οὕτως καὶ ὁ υἱὸς οὓς θέλει ζῳοποιεῖ",
+        "english": "so also the Son gives life to anyone he wishes"
+    },
+    {
+        "verse_reference": "JHN 5:22",
+        "greek": "τὴν κρίσιν πᾶσαν δέδωκεν τῷ υἱῷ",
+        "english": "he has given all judgment to the Son"
+    },
+    {
+        "verse_reference": "JHN 5:23",
+        "greek": "πάντες τιμῶσι τὸν υἱὸν καθὼς τιμῶσι τὸν πατέρα … τὸν υἱὸν",
+        "english": "everyone will honor the Son just as they honor the \nFather … the \nSon"
+    },
+    {
+        "verse_reference": "JHN 5:25",
+        "greek": "οἱ νεκροὶ ἀκούσουσιν τῆς φωνῆς τοῦ υἱοῦ τοῦ θεοῦ",
+        "english": "the dead will hear the voice of the Son of \nGod"
+    },
+    {
+        "verse_reference": "JHN 5:26",
+        "greek": "καὶ τῷ υἱῷ ἔδωκεν ζωὴν ἔχειν ἐν ἑαυτῷ",
+        "english": "he has also given to the Son so that he has life in himself"
+    },
+    {
+        "verse_reference": "JHN 5:27",
+        "greek": "καὶ ἐξουσίαν ἔδωκεν αὐτῷ \nThe bolded word means “to him,” and “him” refers to the Son.",
+        "english": "and the Father has given the Son authority",
+        "notes": "In the original language the word “Son” is not stated explicitly. Some versions of the Bible use the word “Son” to make the meaning clear. If translators use the word \"Son,\" it should be the same as what they use for the Son of God."
+    },
+    {
+        "verse_reference": "JHN 6:40",
+        "greek": "πᾶς ὁ θεωρῶν τὸν υἱὸν καὶ πιστεύων εἰς αὐτὸν ἔχῃ ζωὴν αἰώνιον",
+        "english": "everyone who sees the Son and believes in him would have eternal \nlife"
+    },
+    {
+        "verse_reference": "JHN 6:69",
+        "greek": "σὺ εἶ ὁ χριστὸς ὁ υἱὸς τοῦ ζῶντος θεοῦ",
+        "english": "you are the Christ, the Son of the living \nGod",
+        "notes": "Many versions of the Bible have “you are the Holy One of God.” If translators do put in \"Son,\" it should be the same as what they use for the Son of God."
+    },
+    {
+        "verse_reference": "JHN 8:36",
+        "greek": "ἐὰν οὖν ὁ υἱὸς ὑμᾶς ἐλευθερώσῃ",
+        "english": "Therefore, if the Son sets you free"
+    },
+    {
+        "verse_reference": "JHN 10:36",
+        "greek": "Υἱὸς τοῦ θεοῦ \nεἰμι",
+        "english": "I am the Son of God"
+    },
+    {
+        "verse_reference": "JHN 11:4",
+        "greek": "ἵνα δοξασθῇ ὁ υἱὸς τοῦ θεοῦ διʼ αὐτῆς",
+        "english": "that the Son of God may be \nglorified by it."
+    },
+    {
+        "verse_reference": "JHN 11:27",
+        "greek": "σὺ εἶ ὁ Χριστὸς ὁ υἱὸς τοῦ θεοῦ",
+        "english": "you are the Christ, the Son of God"
+    },
+    {
+        "verse_reference": "JHN 19:7",
+        "greek": "υἱὸν θεοῦ ἑαυτὸν ἐποίησεν",
+        "english": "he claimed to be the Son of \nGod"
+    },
+    {
+        "verse_reference": "JHN 20:31",
+        "greek": "πιστεύητε ὅτι Ἰησοῦς ἐστιν ὁ Χριστὸς ὁ υἱὸς τοῦ θεοῦ",
+        "english": "you would believe that Jesus is the Christ, the Son of God"
+    },
+    {
+        "verse_reference": "ACT 9:20",
+        "greek": "οὗτός ἐστιν ὁ υἱὸς τοῦ θεοῦ",
+        "english": "he is the Son of God"
+    },
+    {
+        "verse_reference": "ACT 13:33",
+        "greek": "Υἱός μου εἶ σύ, ἐγὼ σήμερον γεγέννηκά σε",
+        "english": "You are my Son, today I have become your Father"
+    },
+    {
+        "verse_reference": "ROM 1:3",
+        "greek": "περὶ τοῦ υἱοῦ αὐτοῦ τοῦ γενομένου ἐκ σπέρματος \nΔαυὶδ",
+        "english": "concerning his Son who was a descendant of David"
+    },
+    {
+        "verse_reference": "ROM 1:4",
+        "greek": "τοῦ ὁρισθέντος υἱοῦ θεοῦ ἐν δυνάμει",
+        "english": "he was declared with power to be the Son of \nGod"
+    },
+    {
+        "verse_reference": "ROM 1:9",
+        "greek": "ᾧ λατρεύω ἐν τῷ πνεύματί μου ἐν τῷ εὐαγγελίῳ τοῦ υἱοῦ αὐτοῦ",
+        "english": "whom I serve in my spirit in the gospel of his Son"
+    },
+    {
+        "verse_reference": "ROM 5:10",
+        "greek": "κατηλλάγημεν τῷ θεῷ διὰ τοῦ θανάτου τοῦ υἱοῦ αὐτοῦ",
+        "english": "we were reconciled to God through the death of his \nSon"
+    },
+    {
+        "verse_reference": "ROM 8:3",
+        "greek": "ὁ θεὸς τὸν ἑαυτοῦ υἱὸν",
+        "english": "God … sent his own Son"
+    },
+    {
+        "verse_reference": "ROM 8:29",
+        "greek": "συμμόρφους \nτῆς εἰκόνος τοῦ υἱοῦ αὐτοῦ",
+        "english": "conformed to the image of his Son"
+    },
+    {
+        "verse_reference": "ROM 8:32",
+        "greek": "τοῦ ἰδίου υἱοῦ οὐκ ἐφείσατο",
+        "english": "did not spare his own Son"
+    },
+    {
+        "verse_reference": "1CO 1:9",
+        "greek": "Πιστὸς ὁ θεός, διʼ οὗ ἐκλήθητε εἰς κοινωνίαν τοῦ υἱοῦ αὐτοῦ Ἰησοῦ Χριστοῦ τοῦ κυρίου ἡμῶν",
+        "english": "God is faithful, who called you into the fellowship of his Son, Jesus \nChrist our Lord"
+    },
+    {
+        "verse_reference": "1CO 15:28",
+        "greek": "tότε αὐτὸς ὁ υἱὸς ὑποταγήσεται",
+        "english": "then the Son himself will be subjected"
+    },
+    {
+        "verse_reference": "2CO 1:19",
+        "greek": "ὁ τοῦ θεοῦ γὰρ υἱὸς Ἰησοῦς \nΧριστὸς",
+        "english": "For the Son of \nGod, Jesus \nChrist"
+    },
+    {
+        "verse_reference": "GAL 1:16",
+        "greek": "ἀποκαλύψαι τὸν υἱὸν αὐτοῦ ἐν ἐμοί",
+        "english": "was pleased to reveal his Son in me"
+    },
+    {
+        "verse_reference": "GAL 2:20",
+        "greek": "ἐν πίστει ζῶ τῇ τοῦ υἱοῦ τοῦ θεοῦ",
+        "english": "I live by faith in the Son of \nGod"
+    },
+    {
+        "verse_reference": "GAL 4:4",
+        "greek": "ἐξαπέστειλεν ὁ θεὸς τὸν υἱὸν αὐτοῦ",
+        "english": "God sent out his Son"
+    },
+    {
+        "verse_reference": "GAL 4:6",
+        "greek": "ἐξαπέστειλεν ὁ θεὸς τὸ πνεῦμα τοῦ υἱοῦ αὐτοῦ εἰς τὰς καρδίας ἡμῶν",
+        "english": "God has sent into our hearts the Spirit of his \nSon"
+    },
+    {
+        "verse_reference": "EPH 4:13",
+        "greek": "τὴν ἑνότητα τῆς πίστεως καὶ τῆς \nἐπιγνώσεως τοῦ υἱοῦ τοῦ θεοῦ",
+        "english": "the unity of faith and knowledge of the Son of \nGod"
+    },
+    {
+        "verse_reference": "COL 1:13",
+        "greek": "τὴν βασιλείαν τοῦ υἱοῦ τῆς ἀγάπης αὐτοῦ",
+        "english": "the kingdom of his beloved \nSon"
+    },
+    {
+        "verse_reference": "COL 1:14-19 \nIn the original language pronouns are used, but some versions of the Bible use the word “Son” to make the meaning of the pronoun clear. If translators do put in \"Son,\" it should be the same as what they use for the Son of God.",
+        "greek": "",
+        "english": ""
+    },
+    {
+        "verse_reference": "COL 1:20",
+        "greek": "καὶ δι᾽ αὐτοῦ ἀποκαταλ- λάξαι τὰ πάντα εἰς αὐτόν \nThe word  αὐτοῦ means \n“him,” and it refers to the Son.",
+        "english": "and to reconcile through the Son all things to himself"
+    },
+    {
+        "verse_reference": "1TH 1:10",
+        "greek": "ἀναμένειν τὸν υἱὸν αὐτοῦ ἐκ τῶν οὐρανῶν",
+        "english": "you are waiting for his Son from heaven"
+    },
+    {
+        "verse_reference": "HEB 1:2",
+        "greek": "ἐλάλησεν ἡμῖν ἐν υἱῷ",
+        "english": "he has spoken to us through a \nSon"
+    },
+    {
+        "verse_reference": "HEB 1:3",
+        "greek": "ὃς ὢν ἀπαύγασμα τῆς δόξης \nThe ὃς means \n“who,” and it refers to the Son, who is mentioned in 1:2.",
+        "english": "He is the brightness of God's glory",
+        "notes": "In the original language pronouns are used, but some versions of the Bible add “Son” to make the meaning clear. If translators do put in \"Son,\" it should be the same as what they use for the Son of God."
+    },
+    {
+        "verse_reference": "HEB 1:5",
+        "greek": "Υἱός μου εἶ σύ … καὶ αὐτὸς ἔσται μοι εἰς υἱόν",
+        "english": "You are my Son … and he will be a Son to me"
+    },
+    {
+        "verse_reference": "HEB 1:8",
+        "greek": "πρὸς δὲ τὸν υἱόν",
+        "english": "But to the Son he says"
+    },
+    {
+        "verse_reference": "HEB 3:6",
+        "greek": "Χριστὸς δὲ ὡς υἱὸς ἐπὶ τὸν οἶκον αὐτοῦ",
+        "english": "But Christ is faithful as a Son who is in charge of the house of God"
+    },
+    {
+        "verse_reference": "HEB 4:14",
+        "greek": "Ἰησοῦν τὸν υἱὸν τοῦ θεοῦ",
+        "english": "Jesus the Son of God"
+    },
+    {
+        "verse_reference": "HEB 5:5",
+        "greek": "Υἱός μου εἶ σύ",
+        "english": "You are my \nSon"
+    },
+    {
+        "verse_reference": "HEB 5:8",
+        "greek": "καίπερ ὢν υἱός",
+        "english": "Even though he was a Son"
+    },
+    {
+        "verse_reference": "HEB 6:6",
+        "greek": "Ἀνασταυρ- οῦντας ἑαυτοῖς τὸν υἱὸν τοῦ θεοῦ",
+        "english": "This is because they crucify the Son of God for themselves again"
+    },
+    {
+        "verse_reference": "HEB 7:3",
+        "greek": "ἀφωμοιωμένος δὲ τῷ υἱῷ τοῦ θεοῦ",
+        "english": "Instead, he resembles the Son of God"
+    },
+    {
+        "verse_reference": "HEB 7:28",
+        "greek": "υἱὸν εἰς τὸν αἰῶνα τετελειωμένον",
+        "english": "a Son, who has been made perfect forever"
+    },
+    {
+        "verse_reference": "HEB 10:29",
+        "greek": "ὁ τὸν υἱὸν τοῦ θεοῦ καταπατήσας",
+        "english": "who has trampled underfoot the Son of God"
+    },
+    {
+        "verse_reference": "2PE 1:17",
+        "greek": "Ὁ υἱός μου ὁ ἀγαπητός μου οὗτός ἐστιν",
+        "english": "This is my beloved Son"
+    },
+    {
+        "verse_reference": "1JN 1:3",
+        "greek": "ἡ κοινωνία δὲ ἡ ἡμετέρα μετὰ τοῦ πατρὸς καὶ μετὰ τοῦ υἱοῦ αὐτοῦ Ἰησοῦ \nΧριστοῦ",
+        "english": "Our fellowship is with the Father and with his Son, Jesus Christ"
+    },
+    {
+        "verse_reference": "1JN 1:7",
+        "greek": "τὸ αἷμα Ἰησοῦ τοῦ υἱοῦ αὐτοῦ καθαρίζει ἡμᾶς ἀπὸ πάσης ἁμαρτίας",
+        "english": "the blood of Jesus his Son cleanses us from every sin"
+    },
+    {
+        "verse_reference": "1JN 2:22",
+        "greek": "ὁ ἀρνούμενος τὸν πατέρα καὶ τὸν υἱόν",
+        "english": "he denies the Father and the \nSon"
+    },
+    {
+        "verse_reference": "1JN 2:23",
+        "greek": "πᾶς ὁ ἀρνούμενος τὸν υἱὸν οὐδὲ τὸν πατέρα ἔχει … τὸν υἱὸν",
+        "english": "No one who denies the Son has the \nFather … the \nSon"
+    },
+    {
+        "verse_reference": "1JN 2:24",
+        "greek": "ὑμεῖς ἐν τῷ υἱῷ καὶ ἐν τῷ πατρὶ μενεῖτε",
+        "english": "you will also remain in the \nSon and in the \nFather"
+    },
+    {
+        "verse_reference": "1JN 3:8",
+        "greek": "εἰς τοῦτο ἐφανερώθη ὁ υἱὸς τοῦ θεοῦ",
+        "english": "For this reason the Son of God was revealed"
+    },
+    {
+        "verse_reference": "1JN 3:23",
+        "greek": "πιστεύσωμεν τῷ ὀνόματι τοῦ υἱοῦ αὐτοῦ Ἰησοῦ Χριστοῦ",
+        "english": "we should believe in the name of his \nSon Jesus \nChrist"
+    },
+    {
+        "verse_reference": "1JN 4:9",
+        "greek": "τὸν υἱὸν αὐτοῦ τὸν μονογενῆ ἀπέσταλκεν ὁ θεὸς εἰς τὸν κόσμον",
+        "english": "God has sent his only Son into the world"
+    },
+    {
+        "verse_reference": "1JN 4:10",
+        "greek": "ἀπέστειλεν τὸν υἱὸν αὐτοῦ",
+        "english": "he sent his \nSon"
+    },
+    {
+        "verse_reference": "1JN 4:14",
+        "greek": "ὁ πατὴρ ἀπέσταλκεν τὸν υἱὸν",
+        "english": "the Father has sent the Son"
+    },
+    {
+        "verse_reference": "1JN 4:15",
+        "greek": "Ἰησοῦς ἐστιν ὁ υἱὸς τοῦ θεοῦ",
+        "english": "Jesus is the \nSon of God"
+    },
+    {
+        "verse_reference": "1JN 5:5",
+        "greek": "Ἰησοῦς ἐστιν ὁ υἱὸς τοῦ θεοῦ",
+        "english": "Jesus is the \nSon of God"
+    },
+    {
+        "verse_reference": "1JN 5:9",
+        "greek": "μεμαρτύρηκεν περὶ τοῦ υἱοῦ αὐτοῦ",
+        "english": "he has borne witness concerning his \nSon"
+    },
+    {
+        "verse_reference": "1JN 5:10",
+        "greek": "ὁ πιστεύων εἰς τὸν υἱὸν τοῦ θεοῦ … τοῦ υἱοῦ αὐτοῦ",
+        "english": "Anyone who \nbelieves in the Son of God … his Son"
+    },
+    {
+        "verse_reference": "1JN 5:11",
+        "greek": "αὕτη ἡ ζωὴ ἐν τῷ υἱῷ αὐτοῦ \nἐστιν",
+        "english": "this life is in his \nSon"
+    },
+    {
+        "verse_reference": "1JN 5:12",
+        "greek": "ὁ ἔχων τὸν υἱὸν ἔχει τὴν ζωήν … τὸν υἱὸν τοῦ θεοῦ",
+        "english": "The one who has the Son has life … the \nSon of God"
+    },
+    {
+        "verse_reference": "1JN 5:13",
+        "greek": "εἰς τὸ ὄνομα τοῦ υἱοῦ τοῦ θεοῦ",
+        "english": "in the name of the Son of \nGod"
+    },
+    {
+        "verse_reference": "1JN 5:20",
+        "greek": "οἴδαμεν δὲ ὅτι ὁ υἱὸς τοῦ θεοῦ ἥκει … τῷ υἱῷ αὐτοῦ Ἰησοῦ Χριστῷ",
+        "english": "we know that the Son of God has come \n… his Son \nJesus Christ"
+    },
+    {
+        "verse_reference": "2JN 1:3",
+        "greek": "Ἰησοῦ Χριστοῦ τοῦ υἱοῦ τοῦ πατρὸς",
+        "english": "Jesus Christ, the Son of the \nFather"
+    },
+    {
+        "verse_reference": "2JN 1:9",
+        "greek": "οὗτος καὶ τὸν πατέρα καὶ τὸν υἱὸν ἔχει",
+        "english": "this one has both the Father and the Son"
+    },
+    {
+        "verse_reference": "REV 2:18",
+        "greek": "Τάδε λέγει ὁ υἱὸς τοῦ θεοῦ",
+        "english": "These are the words of the Son of God"
+    }
+]
