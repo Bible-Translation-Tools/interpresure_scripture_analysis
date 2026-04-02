@@ -1,0 +1,10 @@
+# Template for:
+#   python src/build_dataset.py convert --config configs/build_dataset.convert.yaml
+#
+# CLI flags still override YAML values.
+# Relative paths are resolved relative to this file.
+
+convert:
+  csv_path: path/to/template.csv
+  json_out: out/template.json
+  schema_out: out/template.schema.json

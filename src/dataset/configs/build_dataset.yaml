@@ -1,0 +1,53 @@
+# Master YAML template for `python -m dataset`
+#
+# How it works:
+# - Values under `common` apply to every command unless overridden.
+# - Values under `build`, `test`, `compare`, or `convert` apply only to that command.
+# - Relative paths are resolved relative to this YAML file.
+# - CLI flags still win over YAML values.
+#
+# Secrets:
+# - Prefer `api_key_env` so the actual key stays in your shell environment.
+
+common:
+  biblical_language: heb
+  macula_db_path: null # Set to ../src/macula_greek_nestle1904.db for Greek token-id lookup
+  usfm_root: ../lang
+  context_window: 4
+  stream: true
+  model: gpt-5-mini
+  api_key_env: OPENAI_API_KEY
+
+build:
+  book: PHM
+  chapter: 1
+  template_csv: path/to/template.csv
+  json_file: null
+  schema_file: null
+  notes: path/to/notes.txt
+  output_csv: out/generated.csv
+  output_json: out/generated.json
+
+test:
+  book: PHM
+  chapter: 1
+  template_csv: path/to/template.csv
+  json_file: null
+  schema_file: null
+  output_csv: out/test.csv
+  output_json: out/test.json
+
+compare:
+  manual_csv: path/to/manual.csv
+  ai_csv: path/to/ai.csv
+  output_csv: out/compare_summary.csv
+  output_json: out/compare_report.json
+  group_keys:
+    - book
+    - chapter
+    - verse
+
+convert:
+  csv_path: path/to/template.csv
+  json_out: out/template.json
+  schema_out: out/template.schema.json

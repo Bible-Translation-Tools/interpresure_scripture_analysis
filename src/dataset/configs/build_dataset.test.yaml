@@ -1,0 +1,23 @@
+# Template for:
+#   python -m dataset test --config configs/build_dataset.test.yaml
+#
+# CLI flags still override YAML values.
+# Relative paths are resolved relative to this file.
+
+common:
+  biblical_language: heb
+  macula_db_path: null # Set to ../src/macula_greek_nestle1904.db for Greek token-id lookup
+  usfm_root: ../lang
+  context_window: 4
+  stream: true
+  model: gpt-5-mini
+  api_key_env: OPENAI_API_KEY
+
+test:
+  book: PHM
+  chapter: 1
+  template_csv: path/to/template.csv
+  json_file: null
+  schema_file: null
+  output_csv: out/test.csv
+  output_json: out/test.json

@@ -1,0 +1,15 @@
+# Template for:
+#   python src/build_dataset.py compare --config configs/build_dataset.compare.yaml
+#
+# CLI flags still override YAML values.
+# Relative paths are resolved relative to this file.
+
+compare:
+  manual_csv: path/to/manual.csv
+  ai_csv: path/to/ai.csv
+  output_csv: out/compare_summary.csv
+  output_json: out/compare_report.json
+  group_keys:
+    - book
+    - chapter
+    - verse

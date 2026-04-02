@@ -1,0 +1,24 @@
+# Template for:
+#   python -m dataset build --config configs/build_dataset.build.yaml
+#
+# CLI flags still override YAML values.
+# Relative paths are resolved relative to this file.
+
+common:
+  biblical_language: grc
+  macula_db_path: ../../macula_greek_nestle1904.db
+  usfm_root: ../../../lang
+  context_window: 4
+  stream: true
+  model: gpt-5.4
+  api_key_env: OPENAI_API_KEY
+
+build:
+  book: PHM
+  chapter: 1
+  template_csv: ../../../interpresure/interpresure_phm_edited.csv
+  json_file: null
+  schema_file: null
+  notes: ../../../interpresure/prose/phm.txt
+  output_csv: out/generated.csv
+  output_json: out/generated.json
