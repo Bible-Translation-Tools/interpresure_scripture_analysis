@@ -70,6 +70,20 @@ def resolve_config_paths(config_path: Path | None, values: dict[str, Any], keys:
     return resolved
 
 
+def resolve_config_path_list(config_path: Path | None, values: Any) -> list[Path]:
+    if values is None:
+        return []
+    if isinstance(values, (str, Path)):
+        values = [values]
+    if not isinstance(values, (list, tuple)):
+        raise click.ClickException("Config value must be a list of paths.")
+    return [
+        resolve_config_path(config_path, value)
+        for value in values
+        if value is not None
+    ]
+
+
 def config_source_is_default(ctx: click.Context, name: str) -> bool:
     return ctx.get_parameter_source(name) in {ParameterSource.DEFAULT, ParameterSource.DEFAULT_MAP}
 
@@ -95,6 +109,47 @@ def config_or_current(
     if transform is not None and value is not None:
         value = transform(value)
     return value
+
+
+def config_or_current_many(
+    ctx: click.Context,
+    name: str,
+    current: Any,
+    config: dict[str, Any],
+    *,
+    config_path: Path | None = None,
+    path_like: bool = False,
+    transform: Any = None,
+) -> Any:
+    if not config_source_is_default(ctx, name):
+        return current
+    if name not in config:
+        return current
+
+    value = config[name]
+    if value is None:
+        return current
+
+    if isinstance(value, (str, Path)):
+        values = [value]
+    elif isinstance(value, (list, tuple)):
+        values = list(value)
+    else:
+        raise click.ClickException(f"Config value for {name} must be a list of values.")
+
+    resolved: list[Any] = []
+    for item in values:
+        if item is None:
+            continue
+        if path_like:
+            item = resolve_config_path(config_path, item)
+        if transform is not None:
+            item = transform(item)
+        resolved.append(item)
+
+    if isinstance(current, tuple):
+        return tuple(resolved)
+    return resolved
 
 
 def to_int(value: Any) -> int | None:

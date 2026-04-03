@@ -7,6 +7,7 @@ from pathlib import Path
 from ..compare import compare_dataframes, comparison_summary_rows, print_comparison_summary
 from ..config import (
     config_or_current,
+    config_or_current_many,
     config_source_is_default,
     get_command_config,
     load_yaml_config,

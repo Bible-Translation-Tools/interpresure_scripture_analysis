@@ -10,6 +10,7 @@ import click
 from .common import (
     build_common_config,
     config_or_current,
+    config_or_current_many,
     load_schema,
     load_scripture_data,
     log,
@@ -70,6 +71,19 @@ from ..constants import (
     help="Optional Macula SQLite database used to preload token ids for each verse.",
 )
 @click.option(
+    "--bart-db-path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="Optional BART discourse-analysis SQLite database used to preload verse-level annotations for grc runs.",
+)
+@click.option(
+    "--max-tool-calls-per-verse",
+    type=int,
+    default=3,
+    show_default=True,
+    help="Legacy compatibility setting; BART annotations are now preloaded from SQLite.",
+)
+@click.option(
     "--usfm-root",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=DEFAULT_LANG_ROOT,
@@ -89,7 +103,15 @@ from ..constants import (
     show_default=True,
     help="Stream model outputs to the console while generating.",
 )
-@click.option("--notes", type=click.Path(exists=True, dir_okay=False, path_type=Path), default=None, help="Prose notes.")
+@click.option("--notes", type=click.Path(exists=True, dir_okay=False, path_type=Path), default=None, help="Optional prose notes.")
+@click.option(
+    "--few-shot-example",
+    "few_shot_examples",
+    multiple=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=(),
+    help="Chapter-level expert example dataset. Repeatable; supports CSV, JSON, or prose files.",
+)
 @click.option("--output-csv", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Output CSV path.")
 @click.option("--output-json", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Optional raw JSON output path.")
 @click.option("--model", default=DEFAULT_MODEL, show_default=True, help="Model name to use.")
@@ -106,17 +128,20 @@ def build(
     chapter: int | None,
     biblical_language: str,
     macula_db_path: Path | None,
+    bart_db_path: Path | None,
+    max_tool_calls_per_verse: int,
     usfm_root: Path,
     context_window: int,
     stream: bool,
-    notes: Path,
+    notes: Path | None,
+    few_shot_examples: tuple[Path, ...],
     output_csv: Path,
     output_json: Path | None,
     model: str,
     api_key: str | None,
     base_url: str | None,
 ) -> None:
-    """Use prose notes and USFM verse context to generate a structured CSV."""
+    """Use prose notes, few-shot examples, or USFM verse context to generate a structured CSV."""
     config_data = build_common_config(config, "build")
     template_csv = config_or_current(ctx, "template_csv", template_csv, config_data, config_path=config, path_like=True)
     json_file = config_or_current(ctx, "json_file", json_file, config_data, config_path=config, path_like=True)
@@ -125,10 +150,26 @@ def build(
     chapter = config_or_current(ctx, "chapter", chapter, config_data, transform=to_int)
     biblical_language = config_or_current(ctx, "biblical_language", biblical_language, config_data)
     macula_db_path = config_or_current(ctx, "macula_db_path", macula_db_path, config_data, config_path=config, path_like=True)
+    bart_db_path = config_or_current(ctx, "bart_db_path", bart_db_path, config_data, config_path=config, path_like=True)
+    max_tool_calls_per_verse = config_or_current(
+        ctx,
+        "max_tool_calls_per_verse",
+        max_tool_calls_per_verse,
+        config_data,
+        transform=to_int,
+    )
     usfm_root = config_or_current(ctx, "usfm_root", usfm_root, config_data, config_path=config, path_like=True)
     context_window = config_or_current(ctx, "context_window", context_window, config_data, transform=to_int)
     stream = config_or_current(ctx, "stream", stream, config_data, transform=to_bool)
     notes = config_or_current(ctx, "notes", notes, config_data, config_path=config, path_like=True)
+    few_shot_examples = config_or_current_many(
+        ctx,
+        "few_shot_examples",
+        few_shot_examples,
+        config_data,
+        config_path=config,
+        path_like=True,
+    )
     output_csv = config_or_current(ctx, "output_csv", output_csv, config_data, config_path=config, path_like=True)
     output_json = config_or_current(ctx, "output_json", output_json, config_data, config_path=config, path_like=True)
     model = config_or_current(ctx, "model", model, config_data)
@@ -139,14 +180,21 @@ def build(
     missing = []
     if book is None:
         missing.append("book")
-    if notes is None:
-        missing.append("notes")
     if output_csv is None:
         missing.append("output_csv")
     if schema_file is None and template_csv is None and json_file is None:
         missing.append("template_csv/json_file/schema_file")
     if missing:
         raise click.ClickException("Provide or configure: " + ", ".join(missing))
+    if bart_db_path is not None and normalize_biblical_language(str(biblical_language)) != "grc":
+        raise click.ClickException("bart_db_path may only be used when biblical_language is grc.")
+
+    notes_text = Path(notes).read_text(encoding="utf-8") if notes is not None else None
+    mode_label = (
+        f"{str(book).upper()} from prose notes"
+        if notes_text
+        else (f"{str(book).upper()} few-shot generation" if few_shot_examples else f"{str(book).upper()} zero-shot generation")
+    )
 
     log(f"Build mode started for {str(book).upper()} chapter {chapter if chapter is not None else 'all'}")
 
@@ -176,10 +224,14 @@ def build(
             api_key=api_key,
             base_url=base_url,
             macula_db_path=macula_db_path,
-            notes_text=Path(notes).read_text(encoding="utf-8"),
-            use_expert_notes=True,
+            bart_db_path=bart_db_path,
+            max_tool_calls_per_verse=int(max_tool_calls_per_verse) if max_tool_calls_per_verse is not None else 0,
+            few_shot_example_paths=few_shot_examples,
+            notes_text=notes_text,
+            use_expert_notes=notes_text is not None,
+            biblical_language=normalized_biblical_language,
             context_window=context_window,
-            mode_label=f"{str(book).upper()} from prose notes",
+            mode_label=mode_label,
             stream=stream,
         )
     )

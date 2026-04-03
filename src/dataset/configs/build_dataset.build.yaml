@@ -7,6 +7,12 @@
 common:
   biblical_language: grc
   macula_db_path: ../../macula_greek_nestle1904.db
+  bart_db_path: ../../NT_BART_Annotations.db
+  max_tool_calls_per_verse: 3 # Legacy compatibility; BART is preloaded from SQLite.
+  few_shot_examples:
+    - ../../../interpresure/interpresure_php_1.csv
+    - ../../../interpresure/interpresure_psa_145.csv
+    - ../../../interpresure/interpresure_phm.csv
   usfm_root: ../../../lang
   context_window: 4
   stream: true
@@ -14,11 +20,13 @@ common:
   api_key_env: OPENAI_API_KEY
 
 build:
-  book: PHM
-  chapter: 1
+  book: PHP
+  chapter: 2
   template_csv: ../../../interpresure/interpresure_phm_edited.csv
   json_file: null
   schema_file: null
-  notes: ../../../interpresure/prose/phm.txt
+  notes: null
+  bart_db_path: ../../NT_BART_Annotations.db
+  max_tool_calls_per_verse: 3 # Legacy compatibility; BART is preloaded from SQLite.
   output_csv: out/generated.csv
   output_json: out/generated.json

@@ -10,6 +10,7 @@ import click
 from .common import (
     build_common_config,
     config_or_current,
+    config_or_current_many,
     generate_rows_for_verses,
     load_schema,
     load_scripture_data,
@@ -70,6 +71,19 @@ from ..constants import (
     help="Optional Macula SQLite database used to preload token ids for each verse.",
 )
 @click.option(
+    "--bart-db-path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="Optional BART discourse-analysis SQLite database used to preload verse-level annotations for grc runs.",
+)
+@click.option(
+    "--max-tool-calls-per-verse",
+    type=int,
+    default=3,
+    show_default=True,
+    help="Legacy compatibility setting; BART annotations are now preloaded from SQLite.",
+)
+@click.option(
     "--usfm-root",
     type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
     default=DEFAULT_LANG_ROOT,
@@ -89,6 +103,14 @@ from ..constants import (
     show_default=True,
     help="Stream model outputs to the console while generating.",
 )
+@click.option(
+    "--few-shot-example",
+    "few_shot_examples",
+    multiple=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=(),
+    help="Chapter-level expert example dataset. Repeatable; supports CSV, JSON, or prose files.",
+)
 @click.option("--output-csv", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Output CSV path.")
 @click.option("--output-json", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Optional raw JSON output path.")
 @click.option("--model", default=DEFAULT_MODEL, show_default=True, help="Model name to use.")
@@ -105,9 +127,12 @@ def test(
     chapter: int | None,
     biblical_language: str,
     macula_db_path: Path | None,
+    bart_db_path: Path | None,
+    max_tool_calls_per_verse: int,
     usfm_root: Path,
     context_window: int,
     stream: bool,
+    few_shot_examples: tuple[Path, ...],
     output_csv: Path,
     output_json: Path | None,
     model: str,
@@ -123,9 +148,25 @@ def test(
     chapter = config_or_current(ctx, "chapter", chapter, config_data, transform=to_int)
     biblical_language = config_or_current(ctx, "biblical_language", biblical_language, config_data)
     macula_db_path = config_or_current(ctx, "macula_db_path", macula_db_path, config_data, config_path=config, path_like=True)
+    bart_db_path = config_or_current(ctx, "bart_db_path", bart_db_path, config_data, config_path=config, path_like=True)
+    max_tool_calls_per_verse = config_or_current(
+        ctx,
+        "max_tool_calls_per_verse",
+        max_tool_calls_per_verse,
+        config_data,
+        transform=to_int,
+    )
     usfm_root = config_or_current(ctx, "usfm_root", usfm_root, config_data, config_path=config, path_like=True)
     context_window = config_or_current(ctx, "context_window", context_window, config_data, transform=to_int)
     stream = config_or_current(ctx, "stream", stream, config_data, transform=to_bool)
+    few_shot_examples = config_or_current_many(
+        ctx,
+        "few_shot_examples",
+        few_shot_examples,
+        config_data,
+        config_path=config,
+        path_like=True,
+    )
     output_csv = config_or_current(ctx, "output_csv", output_csv, config_data, config_path=config, path_like=True)
     output_json = config_or_current(ctx, "output_json", output_json, config_data, config_path=config, path_like=True)
     model = config_or_current(ctx, "model", model, config_data)
@@ -142,6 +183,8 @@ def test(
         missing.append("template_csv/json_file/schema_file")
     if missing:
         raise click.ClickException("Provide or configure: " + ", ".join(missing))
+    if bart_db_path is not None and normalize_biblical_language(str(biblical_language)) != "grc":
+        raise click.ClickException("bart_db_path may only be used when biblical_language is grc.")
 
     log(f"Test mode started for {str(book).upper()} chapter {chapter if chapter is not None else 'all'}")
 
@@ -171,8 +214,12 @@ def test(
             api_key=api_key,
             base_url=base_url,
             macula_db_path=macula_db_path,
+            bart_db_path=bart_db_path,
+            max_tool_calls_per_verse=int(max_tool_calls_per_verse) if max_tool_calls_per_verse is not None else 0,
+            few_shot_example_paths=few_shot_examples,
             notes_text=None,
             use_expert_notes=False,
+            biblical_language=normalized_biblical_language,
             context_window=context_window,
             mode_label=f"{str(book).upper()} verse-only test generation",
             stream=stream,

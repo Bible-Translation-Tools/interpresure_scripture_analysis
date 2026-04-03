@@ -16,6 +16,8 @@ import pandas as pd
 from model.config import get_config_for_model
 
 from .constants import CSV_METADATA_COLUMNS, DEFAULT_MODEL, DEFAULT_ROWS_KEY, PREFERRED_ROW_KEYS, REFERENCE_RE
+from .bart_mcp import enrich_verse_records_with_bart_annotations
+from .few_shot import render_few_shot_examples
 from .macula import enrich_verse_records_with_macula_tokens
 from .schema import json_safe, load_schema, output_columns, response_format_from_schema, schema_properties, write_json
 
@@ -75,8 +77,10 @@ def build_agent(
 def build_chapter_system_message(
     *,
     schema: dict[str, Any],
+    few_shot_examples_text: str | None,
     notes_text: str | None,
     use_expert_notes: bool,
+    bart_access_enabled: bool,
     mode_label: str,
     book: str,
     chapter: int | None,
@@ -94,7 +98,11 @@ def build_chapter_system_message(
         "A single verse may produce multiple rows.",
         "Create one row per distinct pragmatic inference, span, or annotation that should be captured.",
         "If a verse contains multiple relevant words or phrases, annotate each one separately.",
+        "Few-shot example chapters, if provided, appear below and may use different columns from the target schema.",
+        "Learn style and annotation granularity from them, but do not assume their columns exist in the target schema.",
         "If Macula token rows are present in the verse prompt, use them directly rather than calling a database tool.",
+        "If BART discourse-analysis annotations are provided, inspect them at least once for every verse before finalizing the answer.",
+        "Prefer targeted lookups for the current verse and its immediate context.",
         "When answering, return valid JSON only.",
         "Each turn should produce rows for the current verse only.",
         "Do not repeat the schema in your response.",
@@ -104,9 +112,23 @@ def build_chapter_system_message(
         "Use the Macula token rows provided in the verse prompt to verify the ids for the exact span before writing token_id.",
         "If a span covers multiple words, include all matching Macula ids in surface order, separated by commas.",
         "",
-        "SCHEMA:",
-        schema_text,
     ]
+
+    if few_shot_examples_text:
+        parts.extend(
+            [
+                "",
+                few_shot_examples_text,
+                "",
+            ]
+        )
+
+    parts.extend(
+        [
+            "SCHEMA:",
+            schema_text,
+        ]
+    )
 
     if use_expert_notes:
         parts.extend(
@@ -119,14 +141,32 @@ def build_chapter_system_message(
                 "Keep terminology stable across the entire chapter.",
             ]
         )
+    elif few_shot_examples_text:
+        parts.extend(
+            [
+                "",
+                "This is few-shot generation.",
+                "Infer the annotation style from the example chapter files above.",
+                "Apply that style to the current chapter and keep terminology consistent across turns.",
+            ]
+        )
     else:
         parts.extend(
             [
                 "",
-                "This is test mode.",
+                "This is zero-shot generation.",
                 "Infer the rows from verse text alone.",
                 "Use prior turns only to keep terminology and interpretation consistent.",
-                "If the Macula database tool is available, use it to verify token ids for spans.",
+            ]
+        )
+
+    if bart_access_enabled:
+        parts.extend(
+            [
+                "",
+                "BART DISCOURSE ANNOTATIONS:",
+                "A verse-level BART discourse-analysis lookup is provided below for Greek.",
+                "Use it as evidence, and inspect it before producing the final rows for the verse.",
             ]
         )
 
@@ -174,18 +214,29 @@ def format_stream_content(content: Any) -> tuple[str, str]:
         return "text", stripped
 
 
+def _render_stream_message_text(message: Any) -> tuple[str, str]:
+    content = getattr(message, "content", None)
+    if hasattr(message, "to_text"):
+        text = message.to_text()
+        if isinstance(text, str) and text.strip():
+            return "text", text.strip()
+    if content is None:
+        return "text", ""
+    return format_stream_content(content)
+
+
 def print_stream_chunk(message: Any, *, verse_label: str | None = None) -> None:
     source = getattr(message, "source", None) or getattr(message, "name", None) or "MODEL"
-    content = getattr(message, "content", None)
-    if content is None:
-        return
-    if isinstance(content, str) and not content.strip():
+    type_name = getattr(message, "type", None) or message.__class__.__name__
+
+    kind, rendered = _render_stream_message_text(message)
+    if not rendered:
         return
 
-    kind, rendered = format_stream_content(content)
     label = f"[{source}]"
     if verse_label:
         label = f"{label} {verse_label}"
+    label = f"{label} {type_name}"
 
     click.echo(f"{label} streamed {kind} output:")
     if kind == "json":
@@ -405,6 +456,11 @@ def format_context_window(history: list[dict[str, Any]], context_window: int) ->
                         ensure_ascii=False,
                     )
                 )
+        bart_annotations = item.get("bart_annotations", [])
+        if bart_annotations:
+            blocks.append("BART annotations:")
+            for annotation in bart_annotations:
+                blocks.append(json.dumps(annotation, ensure_ascii=False))
         generated_rows = item.get("rows", [])
         if generated_rows:
             blocks.append("Generated rows:")
@@ -421,6 +477,7 @@ def build_verse_prompt(
     verse_record: dict[str, Any],
     context_history: list[dict[str, Any]],
     context_window: int,
+    bart_access_enabled: bool,
     mode_label: str,
 ) -> str:
     column_order = schema.get("x-column-order", schema_properties(schema))
@@ -441,6 +498,16 @@ def build_verse_prompt(
         ", ".join(column_order),
         "",
     ]
+
+    if bart_access_enabled:
+        prompt_parts.extend(
+            [
+                "BART DISCOURSE ANNOTATIONS:",
+                "A verse-level BART discourse-analysis lookup is provided below for Greek.",
+                "Use it as evidence before answering.",
+                "",
+            ]
+        )
 
     if macula_tokens:
         token_rows = [
@@ -466,10 +533,22 @@ def build_verse_prompt(
             ]
         )
 
+    bart_annotations = verse_record.get("bart_annotations", [])
+    if bart_annotations:
+        prompt_parts.extend(
+            [
+                "BART ANNOTATIONS FOR THIS VERSE:",
+                json.dumps(bart_annotations, indent=2, ensure_ascii=False),
+                "",
+                "Use the BART annotations to identify discourse structure and pragmatic relationships.",
+                "",
+            ]
+        )
+
     prompt_parts.extend(
         [
-        "PREVIOUS TURNS IN THIS CHAPTER:",
-        context_text,
+            "PREVIOUS TURNS IN THIS CHAPTER:",
+            context_text,
         ]
     )
 
@@ -500,8 +579,10 @@ async def run_generation(
         schema=schema,
         system_message=build_chapter_system_message(
             schema=schema,
+            few_shot_examples_text=None,
             notes_text=None,
             use_expert_notes=False,
+            bart_access_enabled=False,
             mode_label="one-off generation",
             book="UNKNOWN",
             chapter=None,
@@ -519,10 +600,14 @@ async def generate_rows_for_verses(
     output_csv: Path,
     book: str,
     chapter: int | None,
+    biblical_language: str,
     model_name: str,
     api_key: str | None,
     base_url: str | None,
     macula_db_path: Path | None,
+    bart_db_path: Path | None,
+    max_tool_calls_per_verse: int,
+    few_shot_example_paths: Iterable[Path] | None,
     notes_text: str | None,
     use_expert_notes: bool,
     context_window: int,
@@ -530,10 +615,24 @@ async def generate_rows_for_verses(
     stream: bool,
 ) -> list[dict[str, Any]]:
     verse_records = enrich_verse_records_with_macula_tokens(verse_records, macula_db_path)
+    verse_records = enrich_verse_records_with_bart_annotations(verse_records, bart_db_path)
+    bart_access_enabled = bart_db_path is not None
+    if bart_access_enabled and biblical_language != "grc":
+        raise click.ClickException("BART MCP access is only supported for grc runs.")
+    few_shot_example_paths = list(few_shot_example_paths or [])
+    if few_shot_example_paths:
+        log(
+            "Loaded "
+            f"{len(few_shot_example_paths)} few-shot example file(s): "
+            + ", ".join(str(path) for path in few_shot_example_paths)
+        )
+    few_shot_examples_text = render_few_shot_examples(few_shot_example_paths)
     system_message = build_chapter_system_message(
         schema=schema,
+        few_shot_examples_text=few_shot_examples_text,
         notes_text=notes_text,
         use_expert_notes=use_expert_notes,
+        bart_access_enabled=bart_access_enabled,
         mode_label=mode_label,
         book=book,
         chapter=chapter,
@@ -574,11 +673,15 @@ async def generate_rows_for_verses(
     for offset, verse_record in enumerate(verse_plan, start=1):
         verse_label = verse_record["reference"]
         log(f"Generating verse {format_verse_progress(verse_record, offset, total_pending)}")
+        if bart_access_enabled:
+            bart_annotation_count = len(verse_record.get("bart_annotations", []))
+            log(f"Loaded {bart_annotation_count} BART annotation(s) for {verse_label}", level="BART")
         prompt = build_verse_prompt(
             schema=schema,
             verse_record=verse_record,
             context_history=context_history,
             context_window=context_window,
+            bart_access_enabled=bart_access_enabled,
             mode_label=mode_label,
         )
         if stream:
@@ -607,6 +710,7 @@ async def generate_rows_for_verses(
                 "reference": verse_record["reference"],
                 "biblical_text": verse_record.get("biblical_text", ""),
                 "macula_tokens": verse_record.get("macula_tokens", []),
+                "bart_annotations": verse_record.get("bart_annotations", []),
                 "rows": verse_rows,
             }
         )

@@ -7,6 +7,9 @@
 common:
   biblical_language: heb
   macula_db_path: null # Set to ../src/macula_greek_nestle1904.db for Greek token-id lookup
+  bart_db_path: null # Set to ../src/NT_BART_Annotations.db for Greek discourse-analysis lookups
+  max_tool_calls_per_verse: 3 # Legacy compatibility; BART is preloaded from SQLite.
+  few_shot_examples: []
   usfm_root: ../lang
   context_window: 4
   stream: true
@@ -19,5 +22,7 @@ test:
   template_csv: path/to/template.csv
   json_file: null
   schema_file: null
+  bart_db_path: null
+  max_tool_calls_per_verse: 3 # Legacy compatibility; BART is preloaded from SQLite.
   output_csv: out/test.csv
   output_json: out/test.json
