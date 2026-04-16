@@ -10,6 +10,33 @@ from agents.linguist import LinguistAgent, LinguistReview
 
 from model.config import get_config_for_model
 
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except Exception:
+        return default
+
+
+def _safe_str(value: Any, default: str = "") -> str:
+    if value is None:
+        return default
+    text = str(value).strip()
+    return text if text else default
+
+
+def _combine_feedback_sections(strengths: str, weaknesses: str, suggestions: str) -> str:
+    sections = []
+    if strengths:
+        sections.append(f"# Strengths:\n{strengths}")
+    if weaknesses:
+        sections.append(f"# Weaknesses:\n{weaknesses}")
+    if suggestions:
+        sections.append(f"# Suggestions:\n{suggestions}")
+    return "\n\n".join(sections)
+
 def parse_critic_output(json_str: str) -> CriticReview | None:
     """Parses the Critic's JSON output."""
     try:
@@ -55,7 +82,7 @@ class PragmaticAnalysis:
                 **Inputs Provided:**
                 1. The Original Text (Greek/Hebrew)
                 2. The Target Translation (Gateway Language)
-                3. Expert Ground Truth Annotations
+                3. Expert Ground Truth Annotations of the Original Text
                 4. Discourse Analysis (BART displays if the Original Text is Greek)
                 5. Syntax Trees (MACULA if the Original Text is Greek)
 
@@ -74,8 +101,8 @@ class PragmaticAnalysis:
 
                 **Required Output Format:**
                 * **Score:** [1 to 10]
-                * **Reasoning:** [Markdown formatted. Explicitly explain how the Ground Truth, BART, and MACULA data influenced the score. Cite original and target text as needed.]
-                * **Confidence:** [0 to 100]
+                * **Reasoning:** [Markdown formatted. Explain your pragmatic analysis of the original text and how the target translation handles those dynamics. Explicitly explain how the Ground Truth, BART, and MACULA data influenced the score. Cite original and target text as needed. Additionally, include a justification behind how confident you are in giving your analysis.]
+                * **Confidence:** [0 to 100 How confident you are in your analysis.]
                 * **Feedback:** [Markdown formatted.]
                     * **Strengths:** [Simple terms]
                     * **Weaknesses:** [Simple terms]
@@ -105,8 +132,8 @@ class PragmaticAnalysis:
 
             **Required Output Format:**
             * **Score:** [1 to 10]
-            * **Reasoning:** [Markdown formatted. Explain your pragmatic analysis of the original text and how the target translation handles those dynamics.]
-            * **Confidence:** [0 to 100]
+            * **Reasoning:** [Markdown formatted. Explain your pragmatic analysis of the original text and how the target translation handles those dynamics. Additionally, include a justification behind how confident you are in giving your analysis.]
+            * **Confidence:** [0 to 100 How confident you are in your analysis.]
             * **Feedback:** [Markdown formatted.]
                 * **Strengths:** [Simple terms]
                 * **Weaknesses:** [Simple terms]
@@ -234,7 +261,7 @@ class PragmaticAnalysis:
             [
                 "",
                 "# TASK:",
-                "Provide your analysis in English, with sectioned markdown lists of (1) strengths, (2) weaknesses, and (3) suggestions regarding the translation's performance against these pragmatic objectives, and a score from 1 to 10.",
+                "Provide your analysis in English as valid JSON matching the schema, including a markdown reasoning explanation, a confidence score from 0 to 100, sectioned markdown lists of (1) strengths, (2) weaknesses, and (3) suggestions regarding the translation's performance against these pragmatic objectives, and a score from 1 to 10.",
             ]
         )
 
@@ -292,9 +319,12 @@ class PragmaticAnalysis:
 
             critique = json.loads(critique)
 
-            strengths = critique["strengths"]
-            weaknesses = critique["weaknesses"]
-            suggestions = critique["suggestions"]
+            score = _safe_int(critique.get("score"), 0)
+            confidence = _safe_int(critique.get("confidence"), 0)
+            reasoning = _safe_str(critique.get("reasoning")) or _safe_str(critique.get("model_analysis"))
+            strengths = _safe_str(critique.get("strengths"))
+            weaknesses = _safe_str(critique.get("weaknesses"))
+            suggestions = _safe_str(critique.get("suggestions"))
 
             results.append(
                 {
@@ -305,8 +335,13 @@ class PragmaticAnalysis:
                     "biblical_text": biblical_text,
                     "translation": translated_text,
                     # "notes": row['notes'],
-                    "score": critique["score"],
-                    "model_analysis": f"# Strengths:\n{strengths}\n\n# Weaknesses:\n{weaknesses}\n\n# Suggestions:\n{suggestions}"
+                    "score": score,
+                    "confidence": confidence,
+                    "reasoning": reasoning,
+                    "strengths": strengths,
+                    "weaknesses": weaknesses,
+                    "suggestions": suggestions,
+                    "model_analysis": _combine_feedback_sections(strengths, weaknesses, suggestions),
                 } 
             )
 
@@ -315,10 +350,13 @@ class PragmaticAnalysis:
         critique = await self._perform_analysis_and_review(self.chapter_overview_prompt())
         critique = json.loads(critique)
 
-        strengths = critique["strengths"]
-        weaknesses = critique["weaknesses"]
-        suggestions = critique["suggestions"]
-        verses_to_review = critique["verses_to_review"]
+        score = _safe_int(critique.get("score"), 0)
+        confidence = _safe_int(critique.get("confidence"), 0)
+        reasoning = _safe_str(critique.get("reasoning")) or _safe_str(critique.get("model_analysis"))
+        strengths = _safe_str(critique.get("strengths"))
+        weaknesses = _safe_str(critique.get("weaknesses"))
+        suggestions = _safe_str(critique.get("suggestions"))
+        verses_to_review = critique.get("verses_to_review", [])
 
         results.append(
             {
@@ -329,8 +367,14 @@ class PragmaticAnalysis:
                 "biblical_text": verse_records[-1].get("biblical_text", "") if verse_records else "",
                 "translation": verse_records[-1].get("translation_text", "") if verse_records else "",
                 # "notes": row['notes'],
-                "score": critique["score"],
-                "model_analysis": f"# Strengths:\n{strengths}\n\n# Weaknesses:\n{weaknesses}\n\n# Suggestions:{suggestions}\n\n# Verses to Review:\n{verses_to_review}"
+                "score": score,
+                "confidence": confidence,
+                "reasoning": reasoning,
+                "strengths": strengths,
+                "weaknesses": weaknesses,
+                "suggestions": suggestions,
+                "verses_to_review": verses_to_review,
+                "model_analysis": f"{_combine_feedback_sections(strengths, weaknesses, suggestions)}\n\n# Verses to Review:\n{verses_to_review}"
             } 
         )
 

@@ -9,7 +9,12 @@ export interface DebateEntry {
 export interface IndividualEntry {
   type: "individual";
   score: number;
-  reasoning: string;
+  confidence?: number;
+  reasoning?: string;
+  strengths?: string;
+  weaknesses?: string;
+  suggestions?: string;
+  model_analysis?: string;
 }
 
 // 2. Create a Union Type (Polymorphism)

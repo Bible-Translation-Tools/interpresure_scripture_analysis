@@ -14,5 +14,5 @@ build:
   chapter: 145
   # macula_db_path: ../../../src/macula_greek_nestle1904.db
   # bart_db_path: ../../../src/NT_BART_Annotations.db
-  output_csv: out/psa_145_few_shot.csv
-  output_json: out/psa_145_few_shot.json
+  output_csv: ../../../out/psa_145_few_shot.csv
+  output_json: ../../../out/psa_145_few_shot.json

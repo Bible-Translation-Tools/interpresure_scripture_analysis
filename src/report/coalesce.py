@@ -4,6 +4,14 @@ import numpy as np
 
 from data.interpresure import Interpresure
 
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        if value is None or pd.isna(value):
+            return default
+        return int(value)
+    except Exception:
+        return default
+
 def safe_json_parse(json_str):
     """
     Parses a string that might be a JSON list, a JSON object, 
@@ -86,11 +94,19 @@ def coalesce_csvs(
 
         # -- A. ADD INDIVIDUAL ANALYSES (One per model) --
         for _, row in ind_rows.iterrows():
+            reasoning = row.get('reasoning', "")
+            if not isinstance(reasoning, str) or not reasoning.strip():
+                reasoning = row.get('model_analysis', "")
             inner_analysis.append({
                 "type": "individual",
                 "model": row.get("model", "Unknown"),
-                "score": int(row.get('score', 0)),
-                "reasoning": row.get('model_analysis', "")
+                "score": _safe_int(row.get('score', 0)),
+                "confidence": _safe_int(row.get('confidence', 0)),
+                "reasoning": reasoning,
+                "strengths": row.get("strengths", ""),
+                "weaknesses": row.get("weaknesses", ""),
+                "suggestions": row.get("suggestions", ""),
+                "model_analysis": row.get('model_analysis', "")
             })
 
         # -- B. ADD DEBATE ANALYSIS (Matching this specific segment) --
