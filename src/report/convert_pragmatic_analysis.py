@@ -40,12 +40,10 @@ def safe_json_parse(json_str):
 def convert_pragmatic(
         individual_path, 
         output_path, 
-        interpresure: Interpresure, 
+        interpresure: Interpresure | None, 
         book: str, 
 ):
     topic = "general"
-
-    annotation_columns = interpresure.get_topic_columns(topic)
 
     # 1. Load the CSVs
     df_individual = pd.read_csv(individual_path)
@@ -55,6 +53,11 @@ def convert_pragmatic(
     book_name = book
     # Get chapter from the first row if it exists
     chapter_num = int(df_individual['chapter'].iloc[0]) if not df_individual.empty else 1
+    if interpresure is None:
+        try:
+            interpresure = Interpresure(book_name, chapter_num)
+        except Exception:
+            interpresure = None
     
     # 3. Process and Group Data
     # We group by these three keys to ensure unique segments are not merged
@@ -70,7 +73,7 @@ def convert_pragmatic(
 
     for (verse_num, biblical_text, *unfiltered_annotations), ind_rows in grouped:
         # convert boolean types away from np types which don't serialize
-        annotations = [bool(x) if isinstance(x, np.bool) else x for x in unfiltered_annotations]
+        annotations = [bool(x) if isinstance(x, np.bool_) else x for x in unfiltered_annotations]
         
         # Extract segment-specific metadata
         first_row = ind_rows.iloc[0]
@@ -105,9 +108,9 @@ def convert_pragmatic(
         "chapter": chapter_num,
         "pragmatic_goal": {
             "type": topic,
-            "title": interpresure.get_topic_title(topic),
-            "goal": interpresure.get_topic_goal(topic),
-            "description": interpresure.get_topic_description(topic)
+            "title": interpresure.get_topic_title(topic) if interpresure else "Pragmatic Annotations",
+            "goal": interpresure.get_topic_goal(topic) if interpresure else "Preserve the pragmatics described by the expert from the original text.",
+            "description": interpresure.get_topic_description(topic) if interpresure else "This group contains pragmatic analysis of the current verse."
         },
         "analysis": analysis_list,
     }

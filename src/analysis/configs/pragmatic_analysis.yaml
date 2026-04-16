@@ -1,0 +1,44 @@
+# Master YAML template for `python -m analysis`
+#
+# How it works:
+# - Values under `common` apply to every command unless overridden.
+# - Values under `build`, `test`, or `compare` apply only to that command.
+# - Relative paths are resolved relative to this YAML file.
+# - CLI flags still win over YAML values.
+#
+# Secrets:
+# - Prefer `api_key_env` in the config if you want the key sourced from your shell.
+
+common:
+  translation_language: en
+  translation_title: ulb
+  biblical_language: heb
+  usfm_root: ../../../lang
+  model: gpt-5.2
+  critic_model: gpt-5-mini
+  api_key_env: OPENAI_API_KEY
+
+build:
+  book: PSA
+  chapter: 145
+  macula_db_path: ../../src/macula_greek_nestle1904.db
+  bart_db_path: ../../src/NT_BART_Annotations.db
+  output_csv: out/psa_145_few_shot.csv
+  output_json: out/psa_145_few_shot.json
+
+test:
+  book: PSA
+  chapter: 145
+  output_csv: out/psa_145_zero_shot.csv
+  output_json: out/psa_145_zero_shot.json
+
+compare:
+  left_json: out/psa_145_zero_shot.json
+  right_json: out/psa_145_few_shot.json
+  output_json: out/psa_145_compare.json
+  output_csv: out/psa_145_compare_summary.csv
+
+convert:
+  book: PSA
+  input_csv: out/psa_145_zero_shot.csv
+  output_json: out/psa_145_zero_shot.json

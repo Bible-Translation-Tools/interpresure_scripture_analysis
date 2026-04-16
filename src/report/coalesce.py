@@ -75,7 +75,7 @@ def coalesce_csvs(
 
     for (verse_num, biblical_text, *unfiltered_annotations), ind_rows in grouped:
         # convert boolean types away from np types which don't serialize
-        annotations = [bool(x) if isinstance(x, np.bool) else x for x in unfiltered_annotations]
+        annotations = [bool(x) if isinstance(x, np.bool_) else x for x in unfiltered_annotations]
         
         # Extract segment-specific metadata
         first_row = ind_rows.iloc[0]

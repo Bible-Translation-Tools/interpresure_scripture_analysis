@@ -22,7 +22,7 @@ common:
 build:
   book: PHP
   chapter: 2
-  template_csv: ../../../interpresure/interpresure_phm_edited.csv
+  template_csv: ../../../interpresure/interpresure_php_1.csv
   json_file: null
   schema_file: null
   notes: null

@@ -3,10 +3,7 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_core.models import ModelInfo
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-import os 
-
-key = os.getenv("OPENAI_API_KEY")
-CLIENT_MODEL = "gpt-5-mini"
+from model.config import get_config_for_model
 
 class CriticReview(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -19,8 +16,11 @@ class CriticReview(BaseModel):
 
 class CriticAgent:
 
-    def __init__(self, critic_model, biblical_language="greek"):
+    def __init__(self, critic_model, biblical_language="greek", api_key=None, base_url=None):
         self.name = "LINGUISTIC_CRITIC"
+        config = get_config_for_model(critic_model)
+        resolved_api_key = api_key if api_key is not None else config.get("key")
+        resolved_base_url = base_url if base_url is not None else config.get("base_url")
         self.system_message=f"""
         You are the Linguistic Critic. Your role is to rigorously review a submitted translation analysis.
         
@@ -39,9 +39,10 @@ class CriticAgent:
     
         self.client = OpenAIChatCompletionClient(
             api_type="openai",
-            model=CLIENT_MODEL, 
+            model=config["model"], 
             model_info=ModelInfo(vision=True, function_calling=True, json_output=True, family="unknown", structured_output=True),
-            api_key=key, 
+            api_key=resolved_api_key, 
+            base_url=resolved_base_url,
             #seed=42, 
             response_format={
                 "type": "json_schema",

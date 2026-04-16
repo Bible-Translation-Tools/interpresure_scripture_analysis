@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import os
 import asyncio
+from pathlib import Path
 from pydantic import BaseModel, Field
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
@@ -24,6 +25,7 @@ import os
 
 from teams.pragmatic_analysis import PragmaticAnalysis
 from teams.summarize import SummarizeDebate
+from report.compare_pragmatic_analysis import compare_pragmatic_analysis_files, print_comparison_summary
 
 load_dotenv()
 
@@ -39,6 +41,7 @@ book = "PSA"
 chapter = 145
 
 biblical_language = "hebrew"
+ANALYSIS_MODE = "zero-shot"
 
 filename = f"../lang/{LANGUAGE}/{book_number}-{book}.usfm"
 greek_filename = f"../lang/grc/{book_number}-{book}.usfm"
@@ -90,36 +93,74 @@ for _, row in df.iterrows():
 
 linguist_model = "gpt-5.2"
 
-async def run_analysis():
-    os.makedirs(f"../out/{LANGUAGE}/{book}/", exist_ok=True)
 
-    final_output_file = f"../out/{LANGUAGE}/{book}/{LANGUAGE}_{book}_pragmatics_analysis.json"
+async def run_analysis(
+    analysis_mode: str = ANALYSIS_MODE,
+):
+    output_dir = Path(f"../out/{LANGUAGE}/{book}/")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    evaluations = []
+    mode_slug = analysis_mode.replace("-", "_")
+    final_output_file = output_dir / f"{LANGUAGE}_{book}_pragmatics_analysis_{mode_slug}.json"
 
-    opening_statement_file = f"../out/{LANGUAGE}/{book}/{book}_pragmatic_analysis.csv"
+    opening_statement_file = output_dir / f"{book}_{mode_slug}_pragmatic_analysis.csv"
 
     interpresure = Interpresure(book, chapter)
+    verse_records = []
+    use_expert_materials = analysis_mode != "zero-shot"
 
-    #initial = await PragmaticAnalysis(interpresure, linguist_model, "gpt-5-mini", biblical_language).run(TRANSLATED_SCRIPTURE_DICT, HEBREW_SCRIPTURE_DICT, book)
-    initial = pd.read_csv(opening_statement_file)
-    
-    #initial.to_csv(opening_statement_file)
+    for _, row in df.iterrows():
+        c = int(row["chapter"])
+        verse = int(row["verse"])
+        ref = f"{book} {chapter}:{verse}"
+        verse_record = {
+            "book": book.upper(),
+            "chapter": c,
+            "verse": verse,
+            "translation_text": verses[ref],
+            "biblical_text": greek_verses[ref] if biblical_language == "greek" else hebrew_verses[ref],
+        }
+        if use_expert_materials:
+            verse_record["pragmatic_annotations"] = interpresure.get_annotations_markdown("general", c, verse)
+        verse_records.append(verse_record)
 
+    await PragmaticAnalysis(
+        linguist_model,
+        "gpt-5-mini",
+        biblical_language,
+        analysis_mode=analysis_mode,
+        use_expert_materials=use_expert_materials,
+    ).run(
+        verse_records,
+        output_csv_path=opening_statement_file,
+    )
 
-    eval_file = f"../out/{LANGUAGE}/{book}/{book}_general_analysis.json"
+    eval_file = output_dir / f"{book}_{mode_slug}_general_analysis.json"
     eval = convert_pragmatic_analysis.convert_pragmatic(
-            individual_path=opening_statement_file, 
-            output_path=eval_file, 
-            interpresure=interpresure, 
-            book=book, 
-        )
-    evaluations.append(eval)
+        individual_path=opening_statement_file,
+        output_path=eval_file,
+        interpresure=interpresure,
+        book=book,
+    )
+    final = finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, [eval])
 
-    final = finalize(final_output_file, LANGUAGE, TRANSLATION_NAME, translation_usfm, evaluations)
-    
-    with open(final_output_file, "w", encoding='utf-8') as f:
+    with open(final_output_file, "w", encoding="utf-8") as f:
         json.dump(final, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
+
+    return final_output_file
+
+
+def compare_analysis_outputs(left_path: Path, right_path: Path, output_path: Path | None = None):
+    report = compare_pragmatic_analysis_files(Path(left_path), Path(right_path))
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2, ensure_ascii=False, cls=NumpyBoolEncoder)
+
+    print_comparison_summary(report)
+    return report
 
 def finalize(outpath, translation_language, translation_title, translation_usfm, evaulations):
     final = {
