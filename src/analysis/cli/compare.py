@@ -24,6 +24,11 @@ from .common import build_common_config
 )
 @click.option("--output-json", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Optional detailed report path.")
 @click.option("--output-csv", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Optional summary CSV path.")
+@click.option(
+    "--comparison-model",
+    default=None,
+    help="Model to use for the LLM comparison judge.",
+)
 @click.pass_context
 def compare(
     ctx: click.Context,
@@ -32,6 +37,7 @@ def compare(
     config: Path | None,
     output_json: Path | None,
     output_csv: Path | None,
+    comparison_model: str | None,
 ) -> None:
     """Compare two final pragmatic analysis JSON files."""
     config_data = build_common_config(config, "compare")
@@ -39,12 +45,17 @@ def compare(
     right_json = config_or_current(ctx, "right_json", right_json, config_data, config_path=config, path_like=True)
     output_json = config_or_current(ctx, "output_json", output_json, config_data, config_path=config, path_like=True)
     output_csv = config_or_current(ctx, "output_csv", output_csv, config_data, config_path=config, path_like=True)
+    comparison_model = config_or_current(ctx, "comparison_model", comparison_model, config_data, config_path=config)
 
     if left_json is None or right_json is None:
         raise click.ClickException("Provide left_json and right_json or set them in the YAML config.")
 
     click.echo(f"[INFO] Compare mode started for {left_json} vs {right_json}")
-    report = compare_pragmatic_analysis_files(Path(left_json), Path(right_json))
+    report = compare_pragmatic_analysis_files(
+        Path(left_json),
+        Path(right_json),
+        comparison_model=comparison_model or "gpt-5-mini",
+    )
     print_comparison_summary(report)
 
     if output_json is not None:

@@ -35,6 +35,7 @@ test:
 compare:
   left_json: out/psa_145_zero_shot.json
   right_json: out/psa_145_few_shot.json
+  comparison_model: gpt-5-mini
   output_json: out/psa_145_compare.json
   output_csv: out/psa_145_compare_summary.csv
 

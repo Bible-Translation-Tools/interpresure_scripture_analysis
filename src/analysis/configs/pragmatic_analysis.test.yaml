@@ -3,13 +3,13 @@
 common:
   translation_language: en
   translation_title: ulb
-  biblical_language: heb
+  biblical_language: grc
   usfm_root: ../../../lang
   model: gpt-5.2
   critic_model: gpt-5-mini
   api_key_env: OPENAI_API_KEY
 
 test:
-  book: PSA
-  chapter: 145
+  book: PHM
+  chapter: 1
   output_dir: ../../../out/pragmatic_analysis

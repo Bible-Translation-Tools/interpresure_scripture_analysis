@@ -1,7 +1,8 @@
 # Example config for `python -m analysis compare`
 
 compare:
-  left_json: out/psa_145_zero_shot.json
-  right_json: out/psa_145_few_shot.json
-  output_json: out/psa_145_compare.json
-  output_csv: out/psa_145_compare_summary.csv
+  left_json: ../../../out/pragmatic_analysis/en_PHM_1_zero_shot_20260417T103549.json
+  right_json: ../../../out/pragmatic_analysis/en_PHM_1_few_shot_20260417T093322.json
+  comparison_model: gpt-5-mini
+  output_json: ../../../out/pragmatic_analysis/en_PHM_1_compare.json
+  output_csv: ../../../out/pragmatic_analysis/en_PHM_1_compare_summary.csv

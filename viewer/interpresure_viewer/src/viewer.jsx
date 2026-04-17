@@ -87,6 +87,38 @@ const buildSummaryMarkdown = (analysis) => {
   return parts.join('\n\n');
 };
 
+const getComparisonOutcomeLabel = (side) => {
+  switch (side) {
+    case 'left':
+      return 'Left better';
+    case 'right':
+      return 'Right better';
+    case 'tie':
+      return 'Tie';
+    default:
+      return 'Undetermined';
+  }
+};
+
+const getComparisonOutcomeBadge = (side) => {
+  switch (side) {
+    case 'left':
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    case 'right':
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    case 'tie':
+      return 'bg-slate-100 text-slate-700 border-slate-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+const getComparisonCardStyle = (isWinner) => (
+  isWinner
+    ? 'border-emerald-300 bg-emerald-50/70 shadow-emerald-100'
+    : 'border-gray-200 bg-white'
+);
+
 const getScoreDotColor = (score) => {
   const s = parseFloat(score);
   if (isNaN(s)) return 'bg-gray-300';
@@ -324,8 +356,11 @@ export default function BibleAnalyzer() {
   const [usfmData, setUsfmData] = useState(null);
   const [analysisData, setAnalysisData] = useState(null); 
   const [verseReports, setVerseReports] = useState(null);
+  const [comparisonData, setComparisonData] = useState(null);
   const [activeChapter, setActiveChapter] = useState(1);
   const [activeSelection, setActiveSelection] = useState(null); 
+  const [activeComparisonSelection, setActiveComparisonSelection] = useState(null);
+  const [viewMode, setViewMode] = useState('analysis');
   const [expandedVerses, setExpandedVerses] = useState(new Set());
   const [sidebarWidth, setSidebarWidth] = useState(450); 
   const sidebarRef = useRef(null);
@@ -342,6 +377,27 @@ export default function BibleAnalyzer() {
     reader.onload = (evt) => {
       try {
         const json = JSON.parse(evt.target.result);
+
+        if (json.verse_reports && Array.isArray(json.verse_reports)) {
+          setComparisonData(json);
+          setViewMode('comparison');
+          setAnalysisData(null);
+          setVerseReports(null);
+          setUsfmData(null);
+          setActiveSelection(null);
+          const firstVerse = json.verse_reports.find((item) => item && item.verse != null);
+          if (firstVerse) {
+            setActiveComparisonSelection({
+              book: firstVerse.book,
+              chapter: firstVerse.chapter,
+              verse: firstVerse.verse,
+            });
+          } else {
+            setActiveComparisonSelection(null);
+          }
+          setError(null);
+          return;
+        }
         
         // 1. Handle Embedded USFM
         if (json.translation && json.translation.usfm) {
@@ -390,6 +446,9 @@ export default function BibleAnalyzer() {
         });
 
         setAnalysisData(refinedMap);
+        setComparisonData(null);
+        setActiveComparisonSelection(null);
+        setViewMode('analysis');
         setError(null);
       } catch (err) {
         console.error(err);
@@ -508,6 +567,22 @@ export default function BibleAnalyzer() {
 
     return null;
   }, [activeSelection, analysisData, verseReports, usfmData]);
+
+  const comparisonVerses = useMemo(() => {
+    if (!comparisonData || !Array.isArray(comparisonData.verse_reports)) return [];
+    return comparisonData.verse_reports;
+  }, [comparisonData]);
+
+  const selectedComparisonContent = useMemo(() => {
+    if (!activeComparisonSelection || !comparisonData) return null;
+    const { book, chapter, verse } = activeComparisonSelection;
+    return comparisonVerses.find(
+      (item) =>
+        item.book === book &&
+        Number(item.chapter) === Number(chapter) &&
+        Number(item.verse) === Number(verse)
+    ) || null;
+  }, [activeComparisonSelection, comparisonData, comparisonVerses]);
 
 
   // --- Sub-components ---
@@ -634,6 +709,154 @@ export default function BibleAnalyzer() {
     );
   };
 
+  const ComparisonSideCard = ({ label, analysis, isWinner, outcomeLabel }) => {
+    const [showDetails, setShowDetails] = useState(false);
+    const summaryMarkdown = buildSummaryMarkdown(analysis);
+    const reasoningMarkdown = analysis?.reasoning || analysis?.model_analysis || '';
+
+    return (
+      <div className={`rounded-xl border shadow-sm overflow-hidden ${getComparisonCardStyle(isWinner)}`}>
+        <div className={`p-4 border-b ${isWinner ? 'border-emerald-200 bg-emerald-100/70' : 'border-gray-100 bg-gray-50'}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</p>
+              <h4 className="text-lg font-semibold text-gray-800 mt-1">{analysis?.model || 'Unknown model'}</h4>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {isWinner && (
+                <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-600 text-white">
+                  {outcomeLabel}
+                </span>
+              )}
+              {analysis?.score != null && (
+                <span className={`text-xs px-2 py-1 rounded font-bold border ${getScoreBadgeColor(analysis.score)}`}>
+                  Score: {analysis.score}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            {analysis?.confidence != null && (
+              <span className={`text-xs px-2 py-1 rounded font-bold border ${getConfidenceBadgeColor(analysis.confidence)}`}>
+                Confidence: {analysis.confidence}%
+              </span>
+            )}
+          </div>
+
+          <div className="text-gray-800 leading-relaxed text-sm prose prose-sm max-w-none">
+            {summaryMarkdown ? (
+              <ReactMarkdown components={markdownComponents}>{summaryMarkdown}</ReactMarkdown>
+            ) : (
+              <p className="text-gray-400 italic">No summary available.</p>
+            )}
+          </div>
+
+          <div>
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${showDetails ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              <Settings size={12} />
+              {showDetails ? "Hide Details" : "Show Details"}
+            </button>
+          </div>
+
+          {showDetails && (
+            <div className="text-gray-800 leading-relaxed text-sm prose prose-sm max-w-none">
+              {reasoningMarkdown ? (
+                <ReactMarkdown components={markdownComponents}>{reasoningMarkdown}</ReactMarkdown>
+              ) : (
+                <p className="text-gray-400 italic">No reasoning available.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const ComparisonVerseView = ({ selection, comparisonModel }) => {
+    if (!selection) return null;
+    const { book, chapter, verse, translation_text, biblical_text, left_analysis, right_analysis, comparison_judgment, highlight_side } = selection;
+    const verdict = comparison_judgment || {};
+    const sideLabel = getComparisonOutcomeLabel(verdict.better_side);
+    const outcomeBadge = getComparisonOutcomeBadge(verdict.better_side);
+    const leftWinner = highlight_side === 'left';
+    const rightWinner = highlight_side === 'right';
+
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="p-6 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs font-bold uppercase tracking-wider">
+              {book} {chapter}:{verse}
+            </span>
+            <ChevronRight size={14} className="text-gray-300" />
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider">
+              <AlignLeft size={12} />
+              Comparison
+            </span>
+            <span className={`px-2 py-0.5 rounded-md border text-xs font-bold uppercase tracking-wider ${outcomeBadge}`}>
+              {sideLabel}
+            </span>
+          </div>
+          <h2 className="text-2xl font-serif text-gray-800 mb-1 leading-tight">
+            Verse Comparison
+          </h2>
+          {comparisonModel && (
+            <p className="text-sm text-gray-500">Judge model: {comparisonModel}</p>
+          )}
+          {verdict.confidence != null && (
+            <p className="text-sm text-gray-500">Judge confidence: {verdict.confidence}%</p>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+          <div className="space-y-6">
+            <VerseContextCard greek={biblical_text} translation={translation_text} />
+
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  <Gavel size={14} />
+                  LLM Comparison Verdict
+                </h4>
+                <span className={`text-xs px-2 py-1 rounded font-bold border ${outcomeBadge}`}>
+                  {sideLabel}
+                </span>
+              </div>
+              <div className="text-gray-800 leading-relaxed text-sm prose prose-sm max-w-none">
+                {verdict.reasoning ? (
+                  <ReactMarkdown components={markdownComponents}>{verdict.reasoning}</ReactMarkdown>
+                ) : (
+                  <p className="text-gray-400 italic">No comparison reasoning available.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <ComparisonSideCard
+                label="Left Analysis"
+                analysis={left_analysis}
+                isWinner={leftWinner}
+                outcomeLabel={sideLabel}
+              />
+              <ComparisonSideCard
+                label="Right Analysis"
+                analysis={right_analysis}
+                isWinner={rightWinner}
+                outcomeLabel={sideLabel}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // --- Render ---
 
   return (
@@ -649,6 +872,20 @@ export default function BibleAnalyzer() {
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={() => setViewMode('analysis')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'analysis' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Analysis
+            </button>
+            <button
+              onClick={() => setViewMode('comparison')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${viewMode === 'comparison' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Comparison
+            </button>
+          </div>
           <div className="relative group">
             <input 
               type="file" 
@@ -656,16 +893,135 @@ export default function BibleAnalyzer() {
               onChange={handleJsonUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <button className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-colors ${analysisData ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
+            <button className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-colors ${((viewMode === 'comparison' ? comparisonData : analysisData) ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50')}`}>
               <Upload size={16} />
-              <span className="text-sm font-medium">{analysisData ? 'Data Loaded' : 'Upload JSON Analysis'}</span>
+              <span className="text-sm font-medium">
+                {viewMode === 'comparison'
+                  ? (comparisonData ? 'Comparison Loaded' : 'Upload Comparison JSON')
+                  : (analysisData ? 'Data Loaded' : 'Upload JSON Analysis')}
+              </span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      {usfmData ? (
+      {viewMode === 'comparison' ? (
+        comparisonData ? (
+          <div className="flex flex-1 overflow-hidden" onMouseUp={stopResizing}>
+            <div
+              className="flex flex-col min-w-[300px] border-r border-gray-200 bg-white"
+              style={{ width: sidebarWidth }}
+            >
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Verses</span>
+                </div>
+                <div className="text-xs text-gray-400">
+                  {comparisonVerses.length} verse blocks
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {comparisonVerses.map((item) => {
+                  const isSelected =
+                    activeComparisonSelection &&
+                    String(activeComparisonSelection.book) === String(item.book) &&
+                    Number(activeComparisonSelection.chapter) === Number(item.chapter) &&
+                    Number(activeComparisonSelection.verse) === Number(item.verse);
+                  const betterSide = item.highlight_side || item.comparison_judgment?.better_side;
+                  return (
+                    <div key={`${item.book}-${item.chapter}-${item.verse}`} className="border border-gray-100 rounded-lg overflow-hidden bg-white hover:border-gray-300 transition-colors shadow-sm">
+                      <div
+                        onClick={() => setActiveComparisonSelection({ book: item.book, chapter: item.chapter, verse: item.verse })}
+                        className={`
+                          p-3 cursor-pointer flex gap-3 items-start relative transition-colors
+                          ${isSelected ? 'bg-indigo-50 border-l-4 border-indigo-500' : 'hover:bg-gray-50 border-l-4 border-transparent'}
+                        `}
+                      >
+                        <span className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold mt-0.5 ${isSelected ? 'bg-indigo-200 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {item.verse}
+                        </span>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className={`text-sm text-gray-800 whitespace-normal ${isSelected ? 'font-medium' : ''}`}>
+                                {item.translation_text || item.biblical_text || 'No verse text'}
+                              </p>
+                              <p className="text-[11px] text-gray-400 mt-1">
+                                {item.book} {item.chapter}:{item.verse}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                              <span className={`text-[10px] px-2 py-1 rounded-full border font-bold uppercase tracking-wider ${getComparisonOutcomeBadge(betterSide)}`}>
+                                {getComparisonOutcomeLabel(betterSide)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div
+              className="w-1 bg-gray-200 hover:bg-indigo-400 cursor-col-resize flex items-center justify-center transition-colors z-20"
+              onMouseDown={startResizing}
+            >
+              <GripVertical size={12} className="text-gray-400" />
+            </div>
+
+            <div className="flex-1 bg-gray-50 flex flex-col min-w-[400px]">
+              {selectedComparisonContent ? (
+                <ComparisonVerseView selection={selectedComparisonContent} comparisonModel={comparisonData?.comparison_model} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-8">
+                  <div className="bg-white p-6 rounded-full shadow-sm mb-4">
+                    <Layers size={48} className="opacity-20 text-indigo-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-600">Select Verse</h3>
+                  <p className="text-sm mt-2 max-w-xs leading-relaxed">
+                    Click a verse row to see the translation, both analyses, and the comparison judgment.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-6">
+            <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
+              <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Upload size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Comparison Dashboard</h2>
+              <p className="text-gray-500 mb-8">
+                Upload a comparison JSON file. It should contain verse reports with both analyses and the comparison judgment.
+              </p>
+
+              <div className="space-y-3">
+                <label className="block w-full">
+                  <div className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2">
+                    <FileText size={18} />
+                    Upload Comparison JSON
+                  </div>
+                  <input type="file" accept=".json" onChange={handleJsonUpload} className="hidden" />
+                </label>
+              </div>
+
+              {error && (
+                <div className="mt-6 p-4 bg-red-50 text-red-700 text-sm rounded-lg flex items-start gap-2 text-left">
+                  <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      ) : usfmData ? (
         <div className="flex flex-1 overflow-hidden" onMouseUp={stopResizing}>
           
           {/* Left Column: Verse List & Goal Accordion */}
@@ -772,16 +1128,20 @@ export default function BibleAnalyzer() {
             <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Upload size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Analysis Dashboard</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {viewMode === 'comparison' ? 'Comparison Dashboard' : 'Analysis Dashboard'}
+            </h2>
             <p className="text-gray-500 mb-8">
-              Upload your JSON Analysis file. It should contain both the translation text (USFM) and the linguistic evaluation data.
+              {viewMode === 'comparison'
+                ? 'Upload a comparison JSON file. It should contain verse reports with both analyses and the comparison judgment.'
+                : 'Upload your JSON Analysis file. It should contain both the translation text (USFM) and the linguistic evaluation data.'}
             </p>
             
             <div className="space-y-3">
               <label className="block w-full">
                 <div className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2">
                   <FileText size={18} />
-                  Upload JSON Analysis
+                  {viewMode === 'comparison' ? 'Upload Comparison JSON' : 'Upload JSON Analysis'}
                 </div>
                 <input type="file" accept=".json" onChange={handleJsonUpload} className="hidden" />
               </label>

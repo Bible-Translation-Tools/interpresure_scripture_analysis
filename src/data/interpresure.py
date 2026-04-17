@@ -1,5 +1,17 @@
+from __future__ import annotations
+
+from pathlib import Path
+from collections.abc import Sequence
+
 from pandas import DataFrame
-import pandas as pd
+
+from data.interpresure_content import (
+    CsvInterpresureContentLoader,
+    InterpresureContentLoader,
+    InterpresureContentLoaderRegistry,
+    InterpresureSource,
+    JsonInterpresureContentLoader,
+)
 
 
 class Interpresure:
@@ -67,28 +79,76 @@ class Interpresure:
         }
     }
 
+    _source_root = Path(__file__).resolve().parents[2] / "interpresure"
+    _sources = {
+        ("phm", 1): InterpresureSource("PHM", 1, _source_root / "interpresure_phm.csv", "csv"),
+        ("php", 1): InterpresureSource("PHP", 1, _source_root / "interpresure_php_1.csv", "csv"),
+        ("psa", 145): InterpresureSource("PSA", 145, _source_root / "interpresure_psa_145.csv", "csv"),
+    }
+    _content_loaders = InterpresureContentLoaderRegistry(
+        {
+            "csv": CsvInterpresureContentLoader(),
+            "json": JsonInterpresureContentLoader(),
+        }
+    )
+
     interpresure: DataFrame = None
 
-    _files = {
-        "phm": {
-            "1": "../interpresure/interpresure_phm.csv"
-        },
-        "php": {
-            "1": "../interpresure/interpresure_php_1.csv"
-        },
-        "psa": {
-            "145": "../interpresure/interpresure_psa_145.csv"
-        }
-    }
+    def __init__(
+        self,
+        book: str,
+        chapter: int,
+        *,
+        source: InterpresureSource | None = None,
+        content_loader: InterpresureContentLoader | None = None,
+        loader_registry: InterpresureContentLoaderRegistry | None = None,
+    ):
+        self.book = book
+        self.chapter = int(chapter)
+        self.source = source or self._get_source(book, chapter)
+        self.loader_registry = loader_registry or self.__class__._content_loaders
+        self.content_loader = content_loader
+        self.load()
 
-    def __init__(self, book: str, chapter: int):
-        self.load(book, chapter)
+    @classmethod
+    def register_source(cls, book: str, chapter: int, path: Path, loader_name: str = "csv") -> None:
+        cls._sources[(book.lower(), int(chapter))] = InterpresureSource(
+            book.upper(),
+            int(chapter),
+            Path(path),
+            loader_name,
+        )
 
-    def load(self, book: str, chapter: int):
-        self.interpresure = pd.read_csv(self._get_file(book, chapter)).fillna("Not Applicable")
+    @classmethod
+    def register_content_loader(cls, name: str, loader: InterpresureContentLoader) -> None:
+        cls._content_loaders.register(name, loader)
 
-    def _get_file(self, book: str, chapter: int) -> str:
-        return self._files[book.lower()][f"{chapter}"]
+    def load(self, book: str | None = None, chapter: int | None = None):
+        if book is not None or chapter is not None:
+            self.book = book if book is not None else self.book
+            self.chapter = int(chapter) if chapter is not None else self.chapter
+            self.source = self._get_source(self.book, self.chapter)
+
+        if self.content_loader is not None:
+            self.interpresure = self.content_loader.load(self.source).fillna("Not Applicable")
+            self.content = self.interpresure
+            return self.interpresure
+
+        self.interpresure = self.loader_registry.load(self.source).fillna("Not Applicable")
+        self.content = self.interpresure
+        return self.interpresure
+
+    @classmethod
+    def _get_source(cls, book: str, chapter: int) -> InterpresureSource:
+        key = (book.lower(), int(chapter))
+        try:
+            return cls._sources[key]
+        except KeyError as exc:
+            available = ", ".join([f"{b.upper()} {c}" for b, c in sorted(cls._sources.keys())])
+            raise KeyError(
+                f"No Interpresure source registered for {book.upper()} {int(chapter)}. "
+                f"Available sources: {available}"
+            ) from exc
 
     def get_topics(self) -> list[str]:
         return self.topics
@@ -113,28 +173,87 @@ class Interpresure:
     def get_topic_columns(self, topic) -> list[str]:
         return self.groups[topic]["columns"].copy()
 
-    def get_annotations(self, topic: str, include_notes = True) -> DataFrame:
-        columns = self.groups[topic]["columns"].copy()
-        columns += ["token_id", "book", "chapter", "verse", "biblical_text"]
-        if include_notes:
-            columns += ["notes"]
-        
+    def _normalize_topics(self, topics: str | Sequence[str] | None = None) -> list[str]:
+        if topics is None:
+            normalized_topics = list(self.topics)
+        elif isinstance(topics, str):
+            normalized_topics = [topics]
+        else:
+            normalized_topics = list(topics)
+
+        if not normalized_topics:
+            normalized_topics = list(self.topics)
+
+        invalid_topics = [topic for topic in normalized_topics if topic not in self.groups]
+        if invalid_topics:
+            available = ", ".join(self.get_topics())
+            raise KeyError(
+                f"Unknown topic(s): {', '.join(invalid_topics)}. Available topics: {available}"
+            )
+
+        seen: set[str] = set()
+        deduped_topics: list[str] = []
+        for topic in normalized_topics:
+            if topic not in seen:
+                deduped_topics.append(topic)
+                seen.add(topic)
+        return deduped_topics
+
+    def _annotation_columns_for_topics(self, topics: list[str], include_notes: bool) -> list[str]:
+        columns: list[str] = []
+        for topic in topics:
+            for column in self.get_topic_columns(topic):
+                if column not in columns:
+                    columns.append(column)
+
+        for column in ["token_id", "book", "chapter", "verse", "biblical_text"]:
+            if column not in columns:
+                columns.append(column)
+
+        if include_notes and "notes" not in columns:
+            columns.append("notes")
+
+        return columns
+
+    def get_annotations(
+        self,
+        topic: str | Sequence[str] | None = None,
+        include_notes: bool = True,
+    ) -> DataFrame:
+        topics = self._normalize_topics(topic)
+        columns = self._annotation_columns_for_topics(topics, include_notes)
+
         df = self.interpresure.reindex(columns=columns)[columns]
         df = df.fillna("No Annotation")
         return df
 
-    def get_annotations_markdown(self, topic: str, chapter: int, verse: int, include_notes = False) -> str:
+    def get_annotations_markdown(
+        self,
+        topic: str | Sequence[str] | None = None,
+        chapter: int | None = None,
+        verse: int | None = None,
+        include_notes: bool = False,
+    ) -> str:
+        if chapter is None or verse is None:
+            raise ValueError("chapter and verse are required for annotation markdown generation.")
 
-        df = self.get_annotations(topic, include_notes)
-
-        grouped_data = df[(df['chapter'] == chapter) & (df['verse'] == verse)]
-        iterr = grouped_data.iterrows()
-
+        topics = self._normalize_topics(topic)
         pragmatic_annotations = "\n## Pragmatic Expert Annotations:\n"
 
-        for _, row in iterr:
-            pragmatic_annotations += f"### {row['biblical_text']}\n"
-            pragmatic_annotations += "\n".join([f"- {x}: {row[x]} " for x in self.get_topic_columns(topic)])
-            pragmatic_annotations += "\n"
+        for current_topic in topics:
+            df = self.get_annotations(current_topic, include_notes)
+            grouped_data = df[(df["chapter"] == chapter) & (df["verse"] == verse)]
+
+            if grouped_data.empty:
+                continue
+
+            pragmatic_annotations += f"\n### {self.get_topic_title(current_topic)}\n"
+
+            for _, row in grouped_data.iterrows():
+                pragmatic_annotations += f"#### {row['biblical_text']}\n"
+                pragmatic_annotations += "\n".join(
+                    [f"- {column}: {row[column]} " for column in self.get_topic_columns(current_topic)]
+                )
+                pragmatic_annotations += "\n"
 
         return pragmatic_annotations

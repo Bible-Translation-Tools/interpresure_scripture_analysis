@@ -135,10 +135,13 @@ async def generate_analysis(
             verse_records = enrich_verse_records_with_bart_annotations(verse_records, bart_db_path)
         for verse_record in verse_records:
             verse_record["pragmatic_annotations"] = interpresure.get_annotations_markdown(
-                "general",
+                None,
                 int(verse_record["chapter"]),
                 int(verse_record["verse"]),
             )
+
+    raise Exception()
+    return
 
     if output_csv is None and output_json is None:
         if output_dir is None:
