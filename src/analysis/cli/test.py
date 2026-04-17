@@ -59,6 +59,12 @@ from .common import build_common_config
     show_default=True,
     help="Root folder containing the lang subdirectories.",
 )
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Output directory used to generate timestamped CSV and JSON filenames.",
+)
 @click.option("--output-csv", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Output CSV path.")
 @click.option("--output-json", type=click.Path(dir_okay=False, path_type=Path), default=None, help="Final JSON output path.")
 @click.option("--model", default=DEFAULT_MODEL, show_default=True, help="Model name to use.")
@@ -75,6 +81,7 @@ def test(
     translation_title: str,
     biblical_language: str,
     usfm_root: Path,
+    output_dir: Path | None,
     output_csv: Path | None,
     output_json: Path | None,
     model: str,
@@ -90,6 +97,7 @@ def test(
     translation_title = config_or_current(ctx, "translation_title", translation_title, config_data)
     biblical_language = config_or_current(ctx, "biblical_language", biblical_language, config_data)
     usfm_root = config_or_current(ctx, "usfm_root", usfm_root, config_data, config_path=config, path_like=True)
+    output_dir = config_or_current(ctx, "output_dir", output_dir, config_data, config_path=config, path_like=True)
     output_csv = config_or_current(ctx, "output_csv", output_csv, config_data, config_path=config, path_like=True)
     output_json = config_or_current(ctx, "output_json", output_json, config_data, config_path=config, path_like=True)
     model = config_or_current(ctx, "model", model, config_data)
@@ -103,13 +111,15 @@ def test(
         missing.append("book")
     if chapter is None:
         missing.append("chapter")
-    if output_json is None:
-        missing.append("output_json")
+    if output_dir is None and output_csv is None and output_json is None:
+        missing.append("output_dir, output_csv, or output_json")
     if missing:
         raise click.ClickException("Provide or configure: " + ", ".join(missing))
 
-    if output_csv is None:
+    if output_csv is None and output_json is not None:
         output_csv = Path(output_json).with_suffix(".csv")
+    elif output_json is None and output_csv is not None:
+        output_json = Path(output_csv).with_suffix(".json")
 
     click.echo(f"[INFO] Zero-shot analysis started for {str(book).upper()} chapter {chapter}")
 
@@ -124,8 +134,9 @@ def test(
         critic_model=str(critic_model),
         api_key=api_key,
         base_url=base_url,
-        output_csv=Path(output_csv),
-        output_json=Path(output_json),
+        output_dir=Path(output_dir) if output_dir is not None else None,
+        output_csv=Path(output_csv) if output_csv is not None else None,
+        output_json=Path(output_json) if output_json is not None else None,
         analysis_mode="zero-shot",
     )
 

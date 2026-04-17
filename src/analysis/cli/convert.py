@@ -5,13 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import click
+import pandas as pd
 
 from dataset.config import config_or_current
 from dataset.usfm import resolve_usfm_file
 
 from report import convert_pragmatic_analysis
 from ..constants import DEFAULT_LANG_ROOT, DEFAULT_TRANSLATION_LANGUAGE, DEFAULT_TRANSLATION_TITLE
-from ..workflow import finalize
+from ..workflow import build_analysis_output_paths, finalize
 
 from .common import build_common_config
 
@@ -35,6 +36,12 @@ from .common import build_common_config
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
     help="Final JSON output path. Defaults to the CSV stem with .json.",
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    default=None,
+    help="Output directory used to generate timestamped JSON filenames.",
 )
 @click.option(
     "--translation-language",
@@ -62,6 +69,7 @@ def convert(
     input_csv: Path | None,
     book: str,
     output_json: Path | None,
+    output_dir: Path | None,
     translation_language: str,
     translation_title: str,
     usfm_root: Path,
@@ -71,6 +79,7 @@ def convert(
     input_csv = config_or_current(ctx, "input_csv", input_csv, config_data, config_path=config, path_like=True)
     book = config_or_current(ctx, "book", book, config_data)
     output_json = config_or_current(ctx, "output_json", output_json, config_data, config_path=config, path_like=True)
+    output_dir = config_or_current(ctx, "output_dir", output_dir, config_data, config_path=config, path_like=True)
     translation_language = config_or_current(ctx, "translation_language", translation_language, config_data)
     translation_title = config_or_current(ctx, "translation_title", translation_title, config_data)
     usfm_root = config_or_current(ctx, "usfm_root", usfm_root, config_data, config_path=config, path_like=True)
@@ -83,10 +92,31 @@ def convert(
     if missing:
         raise click.ClickException("Provide or configure: " + ", ".join(missing))
 
+    df = pd.read_csv(input_csv)
+    chapter_num = int(df["chapter"].iloc[0]) if not df.empty and "chapter" in df.columns else 1
+    inferred_mode = "analysis"
+    stem = Path(input_csv).stem.lower()
+    if "few" in stem:
+        inferred_mode = "few-shot"
+    elif "zero" in stem:
+        inferred_mode = "zero-shot"
+
+    if output_dir is not None and output_json is None:
+        _, output_json, evaluation_json = build_analysis_output_paths(
+            output_dir=Path(output_dir),
+            translation_language=str(translation_language),
+            book=str(book),
+            chapter=chapter_num,
+            analysis_mode=inferred_mode,
+        )
+    else:
+        evaluation_json = None
+
     if output_json is None:
         output_json = Path(input_csv).with_suffix(".json")
 
-    evaluation_json = Path(output_json).with_name(f"{Path(output_json).stem}_general_analysis.json")
+    if evaluation_json is None:
+        evaluation_json = Path(output_json).with_name(f"{Path(output_json).stem}_general_analysis.json")
     output_json.parent.mkdir(parents=True, exist_ok=True)
 
     click.echo(f"[INFO] Converting {input_csv} to chapter evaluation JSON")

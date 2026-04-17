@@ -12,5 +12,4 @@ common:
 test:
   book: PSA
   chapter: 145
-  output_csv: ../../../out/psa_145_zero_shot.csv
-  output_json: ../../../out/psa_145_zero_shot.json
+  output_dir: ../../../out/pragmatic_analysis

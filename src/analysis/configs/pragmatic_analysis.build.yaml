@@ -3,16 +3,15 @@
 common:
   translation_language: en
   translation_title: ulb
-  biblical_language: heb
+  biblical_language: grc
   usfm_root: ../../../lang
   model: gpt-5.2
   critic_model: gpt-5-mini
   api_key_env: OPENAI_API_KEY
 
 build:
-  book: PSA
-  chapter: 145
-  # macula_db_path: ../../../src/macula_greek_nestle1904.db
-  # bart_db_path: ../../../src/NT_BART_Annotations.db
-  output_csv: ../../../out/psa_145_few_shot.csv
-  output_json: ../../../out/psa_145_few_shot.json
+  book: PHM
+  chapter: 1
+  macula_db_path: ../../../src/macula_greek_nestle1904.db
+  bart_db_path: ../../../src/NT_BART_Annotations.db
+  output_dir: ../../../out/pragmatic_analysis

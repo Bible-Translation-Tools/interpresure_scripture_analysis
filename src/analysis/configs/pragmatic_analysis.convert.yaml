@@ -3,7 +3,8 @@
 convert:
   book: PSA
   input_csv: ../../../out/psa_145_zero_shot.csv
-  output_json: ../../../out/psa_145_zero_shot.json
+  # The tool will create a timestamped JSON filename inside this directory.
+  output_dir: ../../../out/pragmatic_analysis
   translation_language: en
   translation_title: ulb
   usfm_root: ../../../lang

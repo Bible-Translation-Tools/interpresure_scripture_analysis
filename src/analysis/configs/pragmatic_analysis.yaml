@@ -23,14 +23,14 @@ build:
   chapter: 145
   macula_db_path: ../../src/macula_greek_nestle1904.db
   bart_db_path: ../../src/NT_BART_Annotations.db
-  output_csv: out/psa_145_few_shot.csv
-  output_json: out/psa_145_few_shot.json
+  # The tool will create timestamped CSV/JSON filenames inside this directory.
+  output_dir: ../../../out/pragmatic_analysis
 
 test:
   book: PSA
   chapter: 145
-  output_csv: out/psa_145_zero_shot.csv
-  output_json: out/psa_145_zero_shot.json
+  # The tool will create timestamped CSV/JSON filenames inside this directory.
+  output_dir: ../../../out/pragmatic_analysis
 
 compare:
   left_json: out/psa_145_zero_shot.json
@@ -41,4 +41,5 @@ compare:
 convert:
   book: PSA
   input_csv: out/psa_145_zero_shot.csv
-  output_json: out/psa_145_zero_shot.json
+  # The tool will create a timestamped JSON filename inside this directory.
+  output_dir: ../../../out/pragmatic_analysis
