@@ -5,13 +5,13 @@ common:
   translation_title: ulb
   biblical_language: grc
   usfm_root: ../../../lang
-  model: gpt-5.2
+  model: gpt-5.4
   critic_model: gpt-5-mini
   api_key_env: OPENAI_API_KEY
 
 build:
-  book: PHM
-  chapter: 1
+  book: ROM
+  chapter: 3
   macula_db_path: ../../../src/macula_greek_nestle1904.db
   bart_db_path: ../../../src/NT_BART_Annotations.db
   output_dir: ../../../out/pragmatic_analysis

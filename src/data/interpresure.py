@@ -80,11 +80,20 @@ class Interpresure:
     }
 
     _source_root = Path(__file__).resolve().parents[2] / "interpresure"
-    _sources = {
+
+    # Sources are registered here.  ROM 3 is conditional: the CSV is generated
+    # from prose notes via `python -m dataset build` and may not yet exist.
+    _sources: dict = {
         ("phm", 1): InterpresureSource("PHM", 1, _source_root / "interpresure_phm.csv", "csv"),
         ("php", 1): InterpresureSource("PHP", 1, _source_root / "interpresure_php_1.csv", "csv"),
         ("psa", 145): InterpresureSource("PSA", 145, _source_root / "interpresure_psa_145.csv", "csv"),
     }
+
+    # Register ROM 3 if the CSV exists; it is generated from prose notes via
+    # `python -m dataset build --config ... --book ROM --chapter 3`.
+    _rom3_path = _source_root / "interpresure_rom_3.csv"
+    if _rom3_path.exists():
+        _sources[("rom", 3)] = InterpresureSource("ROM", 3, _rom3_path, "csv")
     _content_loaders = InterpresureContentLoaderRegistry(
         {
             "csv": CsvInterpresureContentLoader(),
@@ -242,7 +251,7 @@ class Interpresure:
 
         for current_topic in topics:
             df = self.get_annotations(current_topic, include_notes)
-            grouped_data = df[(df["chapter"] == chapter) & (df["verse"] == verse)]
+            grouped_data = self._filter_by_verse(df, chapter, verse)
 
             if grouped_data.empty:
                 continue
@@ -257,3 +266,28 @@ class Interpresure:
                 pragmatic_annotations += "\n"
 
         return pragmatic_annotations
+
+    def _filter_by_verse(self, df: DataFrame, chapter: int, verse: int) -> DataFrame:
+        """Filter annotation rows to those covering the given chapter and verse.
+
+        Handles both single-verse rows (``verse`` column only) and verse-range
+        rows (``verse`` + ``verse_end`` columns, where the range is inclusive).
+        Rows without a ``verse_end`` column, or where ``verse_end`` is NaN /
+        "Not Applicable", are treated as single-verse annotations.
+        """
+        import pandas as pd
+
+        chapter_mask = df["chapter"] == chapter
+        verse_col = df["verse"].astype(str).str.extract(r"^(\d+)")[0].astype(float)
+
+        if "verse_end" in df.columns:
+            raw_end = df["verse_end"]
+            # Coerce non-numeric sentinel values to NaN
+            verse_end_col = pd.to_numeric(raw_end, errors="coerce")
+            # Where verse_end is missing, treat as same as verse_start
+            effective_end = verse_end_col.fillna(verse_col)
+            verse_mask = (verse_col <= verse) & (effective_end >= verse)
+        else:
+            verse_mask = verse_col == verse
+
+        return df[chapter_mask & verse_mask]

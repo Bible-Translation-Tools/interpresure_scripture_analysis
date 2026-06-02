@@ -54,7 +54,7 @@ def compare(
     report = compare_pragmatic_analysis_files(
         Path(left_json),
         Path(right_json),
-        comparison_model=comparison_model or "gpt-5-mini",
+        comparison_model=comparison_model or "gpt-4o-mini",
     )
     print_comparison_summary(report)
 

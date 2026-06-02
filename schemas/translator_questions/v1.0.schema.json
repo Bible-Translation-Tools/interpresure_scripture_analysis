@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "translator_questions/v1.0",
+  "title": "Translator Questions",
+  "description": "A set of diagnostic questions for a translator to evaluate whether their translation expresses the pragmatic features identified in the original text. Generated from InterpreSure annotations and/or the biblical source. Questions should be answerable by looking at the translation alone — no source language knowledge required.",
+  "type": "object",
+  "required": ["type", "version", "questions"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "translator_questions",
+      "description": "Observation type identifier."
+    },
+    "version": {
+      "const": "1.0",
+      "description": "Schema version."
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["question"],
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Plain-language question for the translator. Should not require source language knowledge. E.g. 'Does your translation convey that this is an appeal rather than a command?'"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why this question matters — the pragmatic feature at stake in plain terms. Helps the translator understand what to look for in their rendering."
+          },
+          "annotation_topics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["implicature", "structure", "social", "scales", "general"]
+            },
+            "description": "Which InterpreSure annotation topics this question draws from."
+          }
+        }
+      },
+      "description": "The questions to present to the translator."
+    }
+  }
+}

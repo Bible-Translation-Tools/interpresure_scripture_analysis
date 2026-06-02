@@ -1,0 +1,179 @@
+1. Code: The actual words, morphology, syntax, and discourse markers used to create the utterance. Code is the observable linguistic material.
+2. Utterance: A concrete use of linguistic material by a speaker or writer at a time, place, and interactional position.
+3. Grammar: The structural encoding of the utterance, including clause type, word order, tense, aspect, mood, negation, relative clauses, conditionals, vocatives, and discourse particles.
+4. Prejacent: The basic proposition inside an operator before the operator contributes its meaning. In "If Christ has not been raised, your faith is futile" (1 Cor 15:17), the relevant prejacent under negation is "Christ has been raised." Prejacents are used when analyzing modality, negation, conditionals, focus particles, and scalar operators.
+5. Proposition: The content that can be evaluated for truth once reference, tense, domain, and contextual parameters are supplied. A sentence may underdetermine the proposition communicated, e.g. "He is ready" does not yield a full proposition until the hearer infers who he is and what he is ready for.
+6. Illocutionary Force: The action an utterance performs in communication, such as asserting, commanding, promising, warning, questioning, blessing, forgiving, rebuking, or commissioning.
+7. Direct Speech Act: A speech act whose grammatical form transparently matches its interactional function. Imperatives often perform commands, interrogatives often ask questions, and declaratives often assert.
+8. Indirect Speech Act: A speech act performed through another form. A question, assertion, or assessment can function as a request, rebuke, accusation, invitation, warning, or command depending on design and sequence. Example: "Lord, the one you love is ill" (John 11:3) indirectly requests intervention without explicitly saying "come heal him."
+9. Rhetorical Question: A question-form utterance designed to convey an assertion, challenge, rebuke, or forced conclusion rather than solicit unknown information.
+10. Perlocutionary Effect: The effect a speaker seeks to produce in the hearer, distinct from the act performed. Effects may include repentance, fear, shame, courage, consolation, trust, urgency, solidarity, alienation, obedience, or resistance.
+11. Felicity Conditions: The contextual conditions that must hold for a speech act to be appropriate or effective: the speaker must have standing, the addressee must be relevantly positioned, the procedure must be recognized, and the act must fit the situation.
+12. Performativity: The property by which saying certain words under the right conditions performs the act itself rather than merely reporting it. Examples include blessing, baptizing, forgiving, swearing, promising, and pronouncing judgment.
+13. Uptake: The recipient recognition required for speech acts to count as interactionally successful. An apology, warning, invitation, or rebuke may be produced by the speaker but rejected, resisted, misunderstood, or ratified by the hearer.
+14. Action Formation: The way an utterance is designed as a recognizable social action. Actions such as requesting, inviting, complaining, complimenting, accusing, warning, rebuking, instructing, forgiving, and blessing are implemented by syntax, prosody, timing, address, particles, gaze, embodied conduct, and sequential placement.
+15. Action Ascription: The recipient inference about what action the speaker is performing. The same form can be heard as a request, complaint, accusation, or warning.
+16. Modality: A semantic-pragmatic category involving necessity, possibility, obligation, permission, ability, intention, likelihood, or counterfactuality. The kind of modality involved can be epistemic, deontic, bouletic, teleological, circumstantial, ability, or dynamic.
+18. Modal Base: The body of facts or assumptions relative to which a modal is interpreted. An epistemic modal may be based on the speaker's evidence; a deontic modal may be based on law, command, covenant, or institutional authority.
+19. Ordering Source: The ideals, rules, goals, or norms that rank possible worlds for interpreting modality. For deontic modality the ordering source may be law or command; for teleological modality it may be a goal; for bouletic modality it may be desire.
+20. Deontic Stance: The speaker's displayed orientation to obligation, permission, prohibition, entitlement, or recommendation. Examples include "we must," "you may," "you shall not," "it is fitting," and "let us." Deontic stance may be softened by hedges or intensified by imperatives and institutional authority.
+21. Deontic Authority: The right to determine, authorize, require, forbid, or permit future action. It includes the right to expect compliance and the right to initiate action that affects others.
+22. Normative Authority: The hearer's inference about what role, office, relationship, divine commission, social status, or institutional position authorizes a speech act.
+23. Epistemic Stance: The speaker's displayed degree of knowledge, certainty, uncertainty, inference, doubt, or evidential access. Examples include "I know," "perhaps," "surely," "we have seen," and "it has been reported." Epistemic stance affects how strongly a proposition is presented for uptake.
+24. Epistemic Authority: The relative right to know, assert, question, or correct information in a domain. In interactional terms, a K+ speaker displays greater knowledge rights, while a K- speaker displays lesser access or seeks information.
+25. Evidentiality: The indication of information source: direct perception, eyewitness testimony, hearsay, report, inference, tradition, Scripture, revelation, or common knowledge.
+26. Evidential Commitment: The inference that a source marker also communicates the speaker's level of commitment. "Apparently" may signal hearsay or inference with reduced commitment, while "truly" or "we have seen" may strengthen commitment.
+27. Stance: The speaker's expressed attitude, evaluation, affect, or degree of commitment toward the proposition, interlocutors, or discourse situation.
+28. Evaluative Stance: A value judgment such as good, evil, holy, shameful, honorable, worthy, foolish, righteous, better, worse, beautiful, or defiled.
+29. Affective Stance: An emotional orientation such as joy, grief, fear, anger, affection, longing, compassion, indignation, or hope.
+30. Volitional Stance: The speaker's displayed will, desire, intention, refusal, wish, commitment, or resolve.
+31. Relational Stance: The speaker's positioning of the relationship between speaker and hearer: solidarity, intimacy, distance, contempt, honor, respect, irony, or confrontation.
+32. Commitment Strength: The degree to which the speaker presents a proposition as certain, probable, possible, doubtful, hearsay, or merely entertained.
+33. Metapragmatic Framing: Language that comments on, frames, or regulates the interpretation of other language. Examples include "I tell you the truth," "let the reader understand," "this is what was spoken," "I speak as a fool," or "I am not commanding, but appealing."
+34. Veridicality: Whether an expression entails or presupposes the truth of its embedded proposition. A veridical expression entails truth; a nonveridical expression does not entail truth; an antiveridical expression entails falsity.
+35. Nonveridicality: A context in which the embedded proposition is not entailed as true. Examples include questions, conditionals, disjunctions, imperatives, modals, future-oriented claims, and some intensional predicates.
+36. Antiveridicality: A context that entails the falsity of the embedded proposition, typically under negation or denial.
+37. Entailment: A logical consequence that must hold if the utterance is true. Entailments are not cancellable without contradiction.
+38. Monotonicity: The entailment behavior of expressions with respect to sets. Upward-entailing contexts permit inference from subset to superset; downward-entailing contexts permit inference from superset to subset; non-monotone contexts permit neither simple direction.
+39. Upward-Entailing Environment: An environment where truth moves from a smaller set to a larger set. If "some disciples believed" is true, then "some people believed" is also true.
+40. Downward-Entailing Environment: An environment where truth moves from a larger set to a smaller set. Negation, no, few, at most, and many conditionals can create downward-entailing contexts.
+41. Non-Monotone Environment: An environment that is neither upward- nor downward-entailing. Exact numerals, only, exceptives, and comparative constructions often block simple set expansion or contraction.
+42. Anti-Additive Environment: A strong subtype of downward-entailing environment in which negation distributes over disjunction.
+43. Polarity Sensitivity: The licensing of special expressions in negative, downward-entailing, interrogative, conditional, free-choice, or modal contexts.
+44. Negative Concord: A system in which multiple negative-looking elements yield a single semantic negation.
+45. Scalarity: The use of an expression that evokes ordered alternatives, such as some/all, may/must, possible/certain, warm/hot, good/better/best, one/two/three, or few/many.
+Is Scalar: Whether an expression invokes ordered alternatives. A content is scalar when interpretation depends on a scale of stronger/weaker, more/less, higher/lower, earlier/later, better/worse, permitted/obligatory, possible/certain, pure/impure, holy/common, great/least, first/last, or similar ordered values.
+Scale Type: The dimension on which alternatives are ordered. Common scale types include quantity, number, degree, intensity, certainty, obligation, permission, desirability, moral value, purity, holiness, honor, social rank, temporal distance, spatial distance, completeness, and affectedness.
+Scale Structure: The endpoint structure of the scale. Scales may be open or closed depending on whether they have endpoints. A totally open scale has no lower or upper endpoint. A lower-closed scale has a lower endpoint but no fixed upper endpoint. An upper-closed scale has an upper endpoint. A totally closed scale has both lower and upper endpoints.
+Relative and Absolute Standards: A relative standard is fixed by context or comparison class; an absolute standard is fixed by an endpoint or minimal/maximal degree.
+Scalar Inference: An inference generated from ordered alternatives. Scalar inference is not always a cancellable Gricean implicature. If the grammar or construction forces the exclusion or inclusion relation, and cancellation creates contradiction, the result is better treated as semantic content.
+Scalar Implicature: A defeasible inference produced when a weaker expression is chosen instead of a stronger available alternative on the same scale. This should be called a scalar implicature only when the inference is cancellable. If cancellation produces contradiction, the inference is not an ordinary cancellable scalar implicature.
+47. Alternative: A contextually relevant member of a set that the utterance evokes but does not necessarily assert. Focus, only, even, scalar terms, contrast, and questions all make alternatives salient.
+48. Exhaustivity: The inference that all relevant alternatives except the asserted one are excluded.
+49. Exhaustification: The pragmatic or grammatical strengthening process by which weaker utterances are interpreted as excluding stronger alternatives.
+51. Numeral Inference: The pragmatic interpretation of numerals as exact, at least, at most, or approximate depending on grammar, focus, genre, and context.
+52. Minimizer Inference: A scalar inference in which a low or minimal value is used to intensify a claim.
+53. Maximizer Inference: A scalar inference in which an extreme value strengthens the claim.
+54. Free-Choice Implicature: An inference from permission plus disjunction to the separate permissibility of each option.
+55. Ignorance Implicature: An inference that the speaker does not know which stronger alternative is true. Disjunction and epistemic modals often generate it.
+56. Conditional Perfection: The tendency to enrich "if p, q" into "if and only if p, q."
+57. Concessive Inference: The inference that one proposition holds despite an expectation created by another.
+58. Counterexpectational Inference: The inference that an utterance contradicts or revises what the hearer might have expected.
+59. Inference Type: A category of implicit meaning recoverable beyond bare truth conditions, including implicature, presupposition, explicature, invited inference, social meaning, coherence relation, and perlocutionary effect.
+60. Implicature: A meaning communicated by saying something else, grounded in linguistic convention, conversational context, cooperative reasoning, relevance, or social expectations.
+61. Generalized Conversational Implicature: A default pragmatic inference that arises across many contexts unless cancelled.
+62. Particularized Conversational Implicature: A context-specific inference dependent on local knowledge, sequence, relationship, and activity.
+63. Quantity Implicature: An inference based on the expectation that speakers provide enough information but not too much.
+64. Quality Implicature: An inference based on the expectation that speakers do not assert what they believe false or unsupported.
+65. Relation or Relevance Implicature: An inference based on the expectation that a contribution is relevant to the current issue.
+66. Manner Implicature: An inference generated from how something is said: unusual length, brevity, obscurity, repetition, marked syntax, poetic form, circumlocution, solemn formula, or indirect phrasing.
+67. Conventional Implicature: Meaning conventionally attached to a word or construction but not identical with the main asserted content. Triggers include but, even, yet, still, therefore, however, also, indeed, and certain supplements.
+68. Invited Inference: An inference encouraged by broader discourse organization rather than a specific lexical trigger.
+69. Presupposition: Background information treated as already accepted, uncontroversial, or available in the common ground. Presuppositions are often triggered by definite descriptions, factive verbs, change-of-state verbs, iterative particles, clefts, questions, and temporal clauses.
+70. Existential Presupposition: The presupposition that a referent exists or is identifiable.
+71. Factive Presupposition: A presupposition triggered by factive predicates such as know, realize, regret, be aware, and be glad.
+72. Change-of-State Presupposition: A presupposition triggered by stop, start, continue, resume, return, and related verbs.
+73. Iterative Presupposition: A presupposition that an event or state occurred before, triggered by again, another, also, too, return, or repeated-action markers.
+74. Temporal Presupposition: A presupposition triggered by temporal clauses or particles such as after, before, when, since, until, and while.
+75. Counterfactual Presupposition: A presupposition or strong inference that the antecedent of a counterfactual is false.
+76. Question Presupposition: A presupposition carried by a question.
+77. Bridging Presupposition: A hearer-supplied connection between a newly mentioned entity and a related entity.
+78. Anaphoric Presupposition: A presupposition that a prior discourse referent or proposition is recoverable.
+79. Pragmatic Presupposition: A background assumption arising from speaker action, conversational plans, activity type, or shared practice rather than a specific lexical trigger.
+80. Semantic Presupposition: A presupposition conventionally associated with a word or construction.
+81. Presupposition Projection: The tendency of presupposed content to survive embedding under negation, questions, conditionals, modals, or reported speech.
+82. Presupposition Accommodation: The process by which a hearer accepts presupposed content into the common ground even if it was not previously established.
+83. Presupposition Filtering: The cancellation or satisfaction of a presupposition by material in the same sentence or discourse.
+84. Local Accommodation: Accommodation within a subordinate context rather than the global common ground.
+85. Cancellability: Whether an inference can be explicitly denied without contradiction. Conversational implicatures are usually cancellable; entailments are not; presuppositions may be suspended or accommodated but behave differently from ordinary implicatures.
+86. Inferred Proposition: The proposition the hearer supplies beyond the literal or grammatically encoded content.
+87. At-Issue Meaning: The content currently proposed for acceptance, denial, questioning, or dispute in the discourse. It answers or advances the current Question Under Discussion.
+88. Non-at-Issue Meaning: Meaning communicated alongside the main point, often harder to directly deny because it is not the immediate issue. Includes appositives, parentheticals, vocatives, honorifics, expressives, side comments, and some discourse particles.
+89. Projective Content: Meaning that tends to project out of embedding environments and remain available even under negation, questioning, or conditionals.
+90. Expressive Meaning: Meaning that conveys speaker attitude, emotion, or evaluation while remaining partly independent of truth-conditional content.
+91. Appositive Meaning: Supplemental meaning contributed by a noun phrase or clause that identifies, characterizes, or frames a referent without functioning as the main assertion.
+92. Vocative Meaning: Meaning contributed by direct address terms. Vocatives manage attention, relationship, identity, authority, and affect.
+93. Common Ground: The information, assumptions, commitments, and discourse objects treated as shared or mutually available between participants.
+94. Common-Ground Management: The way speakers add to, challenge, repair, remind, presuppose, or renegotiate shared information.
+95. Accommodation Pressure: The pressure placed on hearers to accept background assumptions in order for the discourse to proceed smoothly.
+96. Question Under Discussion: The explicit or implicit issue that the utterance addresses. A contribution may answer, challenge, reframe, narrow, broaden, evade, suspend, or close the current issue.
+97. Discourse Function: The role an utterance plays in the movement of discourse: answering, objecting, elaborating, correcting, summarizing, shifting topic, grounding, concluding, opening, closing, warning, or challenging.
+98. Information Structure: The packaging of information as topic, comment, focus, background, foreground, given, new, contrastive, or frame-setting.
+99. Topic: What the utterance is about in the local discourse. Topics may be introduced, resumed, shifted, contrasted, or backgrounded.
+100. Comment: What is said about the topic. In topic-comment structure, the comment advances the discourse by adding, evaluating, correcting, or elaborating information about the topic.
+101. Focus: The highlighted part of an utterance that introduces alternatives or marks new, contrastive, corrective, or exhaustive information.
+102. Contrastive Focus: Focus that corrects or contrasts one alternative against another.
+103. Contrastive Topic: A topic marked as one member of a larger set of topics under comparison.
+104. Givenness: The status of a referent or proposition as already present, activated, inferable, or recoverable from common ground.
+105. Newness: The status of information introduced as not yet active in the discourse.
+106. Foregrounding: The packaging of material as central to the main event line, claim, or argument.
+107. Backgrounding: The packaging of material as supportive, circumstantial, explanatory, or presupposed rather than central.
+108. Pragmatic Enrichment: Context-driven completion of what is communicated.
+109. Saturation: Mandatory pragmatic filling of linguistically required slots, such as reference for pronouns, time for tense, comparison class for adjectives, or domain for quantifiers.
+110. Free Enrichment: Optional contextual strengthening not strictly demanded by grammar but needed for natural interpretation.
+111. Domain Restriction: Contextual limitation of quantifiers or general terms.
+112. Reference Assignment: The pragmatic resolution of who or what an expression refers to.
+113. Lexical Narrowing: A pragmatic process in which a word is interpreted more narrowly than its encoded sense.
+114. Lexical Broadening: A pragmatic process in which a word is interpreted more broadly or loosely than its encoded sense.
+115. Loose Use: A pragmatically acceptable nonliteral or approximate use.
+116. Ad Hoc Concept Construction: The hearer's construction of a context-specific concept from a lexical item.
+119. Deixis: Context-dependent pointing through language. Deictic expressions include I, you, we, here, there, now, today, this, that, these things, and this generation.
+120. Person Deixis: Contextual resolution of speaker, addressee, and third-person reference, including inclusive and exclusive we, singular and plural you, and shifts between individuals and groups.
+121. Spatial Deixis: Contextual resolution of here, there, this place, that place, come, go, near, far, above, below, and related terms.
+122. Temporal Deixis: Contextual resolution of now, then, today, tomorrow, this age, that day, hour, soon, near, until, and already/not yet markers.
+123. Discourse Deixis: Reference to parts of the discourse itself.
+124. Social Deixis: Linguistic marking of social relations, rank, respect, intimacy, distance, or hierarchy.
+125. Indexicality: The broader phenomenon in which linguistic forms point to contextual, social, affective, or identity meanings.
+126. Reference Tracking: The inference needed to follow discourse entities across pronouns, names, descriptions, ellipsis, topic shifts, and reintroductions.
+127. Discourse Salience: The relative prominence of an entity, proposition, topic, or event in the discourse.
+128. Anaphora: Reference back to a prior expression, entity, event, or proposition.
+129. Cataphora: Reference forward to a later expression.
+130. Ellipsis Resolution: The recovery of omitted material from context.
+131. Discourse Marker: A word or expression that helps organize discourse, manage sequence, mark contrast, signal inference, shift topic, or display stance.
+132. Procedural Meaning: Instructional meaning that guides interpretation rather than describing the world.
+133. Modal Particle: A small linguistic item that marks speaker stance, discourse relation, expectation, softening, insistence, or shared knowledge.
+134. Discourse-Coherence Relation: The inferred relation connecting clauses, sentences, or discourse units.
+135. Cause Relation: A coherence relation in which one event or state is inferred as producing another.
+136. Result Relation: A coherence relation in which a second unit presents the outcome of a first.
+137. Contrast Relation: A coherence relation in which two propositions are opposed or differentiated.
+138. Concession Relation: A coherence relation in which one proposition holds despite a countervailing expectation.
+139. Elaboration Relation: A coherence relation in which a later unit expands, specifies, exemplifies, or clarifies an earlier unit.
+140. Evidence Relation: A coherence relation in which one unit supports another as evidence or warrant.
+141. Correction Relation: A coherence relation in which a later unit replaces, rejects, or modifies an earlier claim.
+142. Temporal Sequence Relation: A coherence relation in which events are understood as ordered in time.
+143. Purpose Relation: A coherence relation in which one event is performed for the sake of another.
+144. Temporal and Aspectual Pragmatic Inference: Contextual inference about ordering, duration, completion, continuation, interruption, iteration, and boundedness arising from tense, aspect, adverbs, and narrative sequencing.
+145. Aspectual Viewpoint: The way grammar presents an event as bounded, ongoing, habitual, completed, inceptive, or resultative.
+146. Figurative-Language Inference: Inference required when intended meaning departs from literal compositional meaning.
+147. Metaphor: A mapping from a source domain (usually concrete) to a target domain (more abstract).
+148. Metonymy: Reference to one entity by means of a related entity within the same frame.
+149. Synecdoche: Reference to a whole by a part, or a part by a whole.
+150. Hyperbole: Deliberate overstatement for emphasis, affect, or evaluation.
+151. Understatement: Deliberate weakening of expression to intensify, soften, or imply more than is said.
+152. Litotes: A figure that affirms by negating the opposite in order to reduce epistemic commitment.
+153. Euphemism: A softer or indirect expression for something socially, religiously, or emotionally sensitive.
+154. Circumlocution: Indirect or roundabout expression used for reverence, avoidance, politeness, danger management, taboo, irony, or social delicacy.
+155. Irony: A use in which the intended meaning is opposed to or sharply different from the literal wording.
+156. Sarcasm: A biting or mocking form of irony directed at a target.
+157. Echoic Mention: A use that echoes another voice, expression, or expectation while expressing a stance toward it.
+158. Parody: Imitative reuse of a form, genre, voice, or discourse style for mockery, critique, or inversion.
+164. Genre Inference: Meaning inferred from discourse type. Parable, apocalypse, proverb, lament, law, genealogy, epistle, narrative, oracle, sermon, and wisdom saying create different expectations.
+165. Register Inference: Meaning inferred from level, setting, or style of language: formal, legal, liturgical, familial, prophetic, vulgar, intimate, elevated, bureaucratic, or colloquial.
+169. Social Meaning: Meaning that linguistic forms convey about identity, stance, group membership, social position, piety, authority, education, region, class, gender, or ideology.
+170. Identity Inference: How labels and address terms position people socially, morally, or theologically.
+171. Alignment Inference: How an utterance positions the speaker with or against another person, group, claim, activity, or stance.
+174. Recipient Design: Tailoring talk to the specific recipient's knowledge, role, identity, relationship, and expectations.
+181. Face: The positive social value a person claims in interaction. Positive face concerns the desire to be approved of, appreciated, included, and understood. Negative face concerns the desire for autonomy and freedom from imposition.
+182. Facework: Strategies for maintaining, threatening, repairing, or negotiating face while communicating.
+183. Positive Politeness: Redressive language oriented toward the hearer's desire for approval, solidarity, inclusion, and shared values.
+184. Negative Politeness: Redressive language oriented toward the hearer's autonomy and freedom from imposition.
+185. Bald-On-Record Design: A direct, unmitigated utterance that performs the act without redressive softening.
+186. Off-Record Design: An indirect design that allows plausible deniability and requires inference.
+187. Hedging: Cautious or qualifying language that reduces force, commitment, or imposition.
+188. Mitigation: Softening an utterance's force or face threat through hedges, indirectness, modal verbs, apology, honorifics, reasons, or appeals.
+189. Aggravation: Intensifying force or face threat through insults, imperatives, intensifiers, exposure, mockery, or direct accusation.
+190. Impoliteness: Strategic face attack or failure of expected politeness.
+191. Apology: A remedial act that acknowledges offense, error, misunderstanding, or social damage.
+192. Compliment: A positive assessment of the hearer, group, or their conduct, often supporting positive face and affiliation.
+193. Account: An explanation, excuse, justification, or reason offered to make an action intelligible or acceptable.
+194. Relational Repair: Post-event restoration of social equilibrium after face damage.

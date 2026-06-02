@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "discourse_map/v1.0",
+  "title": "Discourse Map",
+  "description": "Structured output of the global discourse pass for a chapter. Anchored at chapter level. Establishes the discourse framework — QUDs, argument structure, boundaries, relational dynamics — that grounds the verse-level analyses.",
+  "type": "object",
+  "required": ["type", "version", "argument_structure", "genre_notes"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "discourse_map",
+      "description": "Observation type identifier."
+    },
+    "version": {
+      "const": "1.0",
+      "description": "Schema version."
+    },
+    "dominant_quds": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The dominant Questions Under Discussion active across this chapter. These are the implicit or explicit issues the discourse is building toward or answering."
+    },
+    "argument_structure": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Prose description of the argumentative, narrative, or poetic arc of the chapter."
+    },
+    "discourse_boundaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["verse_start", "verse_end", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "verse_start": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "First verse of this discourse unit."
+          },
+          "verse_end": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Last verse of this discourse unit."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What this discourse unit is doing — its function in the chapter's argument or narrative."
+          }
+        }
+      },
+      "description": "Discourse units with verse ranges and functional descriptions. Boundaries are identified from structure, QUD shifts, topic changes, or genre markers."
+    },
+    "relational_dynamics": {
+      "type": "string",
+      "description": "The social and relational context operative across the chapter: speaker-addressee relationship, power/solidarity balance, face considerations, and how these shift."
+    },
+    "active_scales": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Scalar dimensions active in this chapter (e.g. obligation/permission, honor/shame, affection/distance). These are the scales whose endpoints matter for pragmatic interpretation."
+    },
+    "key_presuppositions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Background assumptions the chapter takes for granted — propositions that are presupposed rather than asserted and that ground the discourse."
+    },
+    "genre_notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Genre and register observations affecting interpretation: what kind of text this is, what norms govern it, and how that shapes pragmatic expectations."
+    }
+  }
+}

@@ -9,12 +9,45 @@ from typing import Literal
 from pathlib import Path
 from typing import Any, Iterable
 
-from autogen_agentchat.agents import AssistantAgent
-from autogen_core.models import ModelInfo
-from autogen_ext.models.openai import OpenAIChatCompletionClient
 from pydantic import BaseModel, ConfigDict, Field
 
 from model.config import get_config_for_model
+
+
+def _strict_response_format(schema_cls) -> dict[str, Any]:
+    """Build an OpenAI strict response_format with all properties forced into required."""
+    schema = schema_cls.model_json_schema()
+    _force_all_required(schema)
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": schema_cls.__name__,
+            "strict": True,
+            "schema": schema,
+        },
+    }
+
+
+def _force_all_required(schema: dict[str, Any]) -> None:
+    """Recursively force every property key into required for OpenAI strict mode."""
+    if "properties" in schema:
+        schema["required"] = list(schema["properties"].keys())
+        for prop_schema in schema["properties"].values():
+            if isinstance(prop_schema, dict):
+                _force_all_required(prop_schema)
+    for defs_key in ("$defs", "definitions"):
+        if defs_key in schema:
+            for sub in schema[defs_key].values():
+                if isinstance(sub, dict):
+                    _force_all_required(sub)
+    for key in ("items", "additionalProperties"):
+        if key in schema and isinstance(schema[key], dict):
+            _force_all_required(schema[key])
+    for combiner in ("allOf", "anyOf", "oneOf"):
+        if combiner in schema:
+            for sub in schema[combiner]:
+                if isinstance(sub, dict):
+                    _force_all_required(sub)
 
 
 class ComparisonJudgment(BaseModel):
@@ -150,10 +183,14 @@ def _build_compare_prompt(verse_payload: dict[str, Any]) -> str:
 async def _compare_with_llm(
     *,
     verse_payload: dict[str, Any],
-    comparison_model: str = "gpt-5-mini",
+    comparison_model: str = "gpt-4o-mini",
     api_key: str | None = None,
     base_url: str | None = None,
 ) -> ComparisonJudgment:
+    from agent_framework import Agent  # type: ignore[import]
+    from agent_framework.openai import OpenAIChatCompletionClient  # type: ignore[import]
+
+    # Resolve credentials via the existing model config registry
     config = get_config_for_model(comparison_model)
     resolved_api_key = api_key if api_key is not None else config.get("key")
     resolved_base_url = base_url if base_url is not None else config.get("base_url")
@@ -165,45 +202,30 @@ async def _compare_with_llm(
         )
 
     client_kwargs: dict[str, Any] = {
-        "api_type": "openai",
-        "model": config["model"],
+        "model": config.get("model", comparison_model),
         "api_key": resolved_api_key,
-        "model_info": ModelInfo(
-            vision=True,
-            function_calling=True,
-            json_output=True,
-            family="unknown",
-            structured_output=True,
-        ),
-        "timeout": 90,
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "comparison_judgment",
-                "strict": True,
-                "schema": ComparisonJudgment.model_json_schema(),
-            },
-        },
     }
     if resolved_base_url:
         client_kwargs["base_url"] = resolved_base_url
 
     client = OpenAIChatCompletionClient(**client_kwargs)
-    judge = AssistantAgent(
+    judge = Agent(
         name="PRAGMATIC_COMPARISON_JUDGE",
-        model_client=client,
-        system_message=_compare_system_message(),
+        client=client,
+        instructions=_compare_system_message(),
+        default_options={
+            "response_format": _strict_response_format(ComparisonJudgment),
+        },
     )
-    result = await judge.run(task=_build_compare_prompt(verse_payload))
-    raw = result.messages[-1].content
-    if isinstance(raw, dict):
-        return ComparisonJudgment(**raw)
-    cleaned = str(raw).strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.removeprefix("```json").removeprefix("```").strip()
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3].strip()
-    return ComparisonJudgment(**json.loads(cleaned))
+
+    result = await judge.run(_build_compare_prompt(verse_payload))
+    raw = result.text.strip() if hasattr(result, "text") else str(result).strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+    return ComparisonJudgment.model_validate_json(raw)
 
 
 def _load_document(path: Path) -> dict[str, Any]:

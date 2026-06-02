@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "interpresure_suggestions/v2.0",
+  "title": "InterpreSure Suggestions",
+  "description": "Pragmatic analysis of a Bible translation passage. Evaluates how well the translation preserves the pragmatic meaning of the original — implicatures, presuppositions, information structure, social dynamics, and scalar nuances. Can be anchored at verse or chapter level. Chapter-level items summarize the full chapter.",
+  "type": "object",
+  "required": ["type", "version", "strengths", "weaknesses", "suggestions"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "const": "interpresure_suggestions",
+      "description": "Observation type identifier."
+    },
+    "version": {
+      "const": "2.0",
+      "description": "Schema version."
+    },
+    "strengths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "What the translation does well pragmatically. Each item is a single concrete observation. May be empty."
+    },
+    "weaknesses": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Areas where pragmatic meaning is lost, distorted, or over-explicated. Each item is a single concrete observation. May be empty."
+    },
+    "suggestions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Concrete actionable improvements in plain language. Each item is a single suggestion. May be empty."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Overall pragmatic fidelity score. 1 = substantial meaning loss, 10 = all in-line and between-the-lines meaning preserved."
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Model confidence in this analysis (0–100)."
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Markdown-formatted technical reasoning. Explains the pragmatic analysis of the original and how the translation handles those dynamics. May cite Greek/Hebrew from the source text and words/phrases from the translation. Should note how expert annotations, BART, and MACULA data (if available) influenced the assessment."
+    },
+    "cross_references": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "U23003 scripture references the model consulted during analysis (e.g. cross-chapter or cross-book references). Empty if none were used."
+    },
+    "verses_to_review": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "description": "For chapter-level items only: verse numbers within the chapter that need the most translator attention. Empty for verse-level items."
+    }
+  }
+}

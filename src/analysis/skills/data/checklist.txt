@@ -1,0 +1,41 @@
+What is the code: the actual words, grammar, construction, word order, particles, tense/aspect, mood, and discourse markers used?
+What is the illocutionary force, and is it direct or indirect?
+What are the felicity conditions for the speech act: authority, sincerity, uptake, addressee status, preparatory conditions, and institutional or covenantal rights?
+What proposition is said, and what pragmatic enrichment, reference assignment, domain restriction, ellipsis resolution, or lexical narrowing/broadening is required?
+What is the prejacent under any operator such as negation, modality, conditionals, factives, only, even, if, because, before, after, or reported speech?
+What modality is present: epistemic, deontic, bouletic, circumstantial, teleological, dynamic, or ability-related?
+What is the veridicality profile: veridical, nonveridical, or antiveridical?
+What is presupposed, and does the presupposition project through negation, question, condition, report, or denial?
+Is any presupposition being accommodated into the common ground rather than previously established?
+What is entailed, and what is the entailment environment: upward-entailing, downward-entailing, non-monotone, anti-additive, or polarity-sensitive?
+What is implicated: generalized conversational implicature, particularized implicature, scalar implicature, ignorance implicature, free-choice inference, conditional perfection, manner implicature, or relevance-based inference?
+Is the inference cancellable, reinforceable, detachable, or non-cancellable?
+What is conventionally signaled by words such as but, even, still, yet, therefore, indeed, only, also, for, so, then, or however?
+What meaning is non-at-issue: appositive, vocative, expressive, honorific, parenthetical, side comment, or backgrounded identity claim?
+What alternatives are evoked, scalarized, ranked, excluded, included, minimized, maximized, or left open?
+Is there exhaustivity: only this, exactly this, this and no more, or this rather than that?
+What deixis must be resolved: I, you, we, here, there, now, today, this, that, these things, this generation, my hour, your house, and similar expressions?
+What reference-tracking, anaphora, cataphora, topic continuity, salience, or ambiguity must be resolved?
+What is the Question Under Discussion, and does the utterance answer, resist, evade, narrow, broaden, reframe, or close it?
+What common-ground move is being made: assertion, reminder, correction, challenge, appeal to shared Scripture, appeal to shared memory, or appeal to assumed knowledge?
+What stance is displayed: epistemic, evaluative, affective, deontic, volitional, relational, or hybrid?
+What evidential source is displayed: direct witness, report, inference, tradition, Scripture, revelation, rumor, or shared knowledge?
+What epistemic authority is claimed or resisted: who knows, who has the right to know, and who is treated as K+ or K−?
+What deontic authority or normative standing is claimed or resisted: who may command, permit, prohibit, forgive, judge, teach, bless, send, or promise?
+What facework is being performed: politeness, mitigation, aggravation, apology, compliment, rebuke, honorific address, solidarity, distancing, or repair?
+What sequence position does the utterance occupy: first pair part, second pair part, pre-sequence, insert expansion, post-expansion, opening, closing, summons, answer, challenge, or response?
+What next action is made conditionally relevant: answer, obedience, repentance, defense, agreement, refusal, confession, clarification, uptake, or silence?
+What repair is being performed: self-repair, other-initiated repair, other-repair, clarification, reformulation, correction, or third-position repair?
+What turn-taking, floor, overlap, pause, latching, timing, or transition-relevance behavior matters?
+Who takes, holds, yields, steals, shares, clears, manages, loses, re-enters, or allocates the floor?
+What prosodic or embodied features matter where recoverable: emphasis, pitch, pause, tempo, gaze, gesture, posture, touch, spatial arrangement, or object use?
+What information structure is active: topic, comment, focus, contrastive focus, contrastive topic, givenness, newness, foregrounding, or backgrounding?
+What discourse-coherence relation connects the units: cause, result, contrast, concession, elaboration, evidence, explanation, correction, restatement, sequence, climax, purpose, means, or condition?
+What figurative inference is required: metaphor, metonymy, synecdoche, hyperbole, understatement, litotes, euphemism, irony, sarcasm, parody, echoic mention, symbol, or typology?
+What genre, register, or institutional frame governs interpretation: parable, proverb, apocalypse, lament, prophecy, legal dispute, courtroom exchange, synagogue teaching, epistle, sermon, miracle narrative, genealogy, prayer, blessing, curse, or meal discourse?
+What intertextual or allusive inference is active: quotation, echo, paraphrase, typology, motif reuse, scriptural fulfillment, covenantal frame, or thematic allusion?
+What social, identity, alignment, affiliation, or disaffiliation inference is created by address terms, labels, group names, kinship terms, honorifics, insults, or in-group markers?
+What footing shift occurs: direct speech, reported speech, quotation, irony, role shift, narrator comment, authorial aside, or speaking on behalf of another?
+What perlocutionary effect is designed: fear, repentance, shame, trust, courage, consolation, obedience, urgency, wonder, solidarity, alienation, or confrontation?
+What translation-pragmatic risk is present: over-explicitness, under-translation, loss of politeness, loss of honor/shame cues, loss of discourse-particle force, loss of rhetorical-question force, loss of ambiguity, loss of intertextual echo, or false implication in the receptor language?
+What is the common-ground, projection, veridicality, and cancellability status of the inference?
