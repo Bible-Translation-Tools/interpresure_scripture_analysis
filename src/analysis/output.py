@@ -19,16 +19,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .repo_info import RepoInfo
 from .schemas import AnalysisItem
 
 
 # ---------------------------------------------------------------------------
-# Git helpers
+# Git helpers (kept for test compatibility)
 # ---------------------------------------------------------------------------
 
 
 def _git_commit_sha(repo_root: Path | None = None) -> str:
-    """Return the current git HEAD SHA, or a fallback string if git is unavailable."""
+    """Return the current git HEAD SHA, or ``'unknown'`` if unavailable."""
     try:
         result = subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
@@ -42,7 +43,7 @@ def _git_commit_sha(repo_root: Path | None = None) -> str:
 
 
 def _git_remote_url(repo_root: Path | None = None) -> str:
-    """Return the origin remote URL, or an empty string if unavailable."""
+    """Return the origin remote URL, or ``''`` if unavailable."""
     try:
         result = subprocess.check_output(
             ["git", "remote", "get-url", "origin"],
@@ -65,23 +66,21 @@ class RunWriter:
 
     The directory layout matches what the scripture-analysis-api CLI expects:
     ``repo.json``, ``run.json``, and one scope JSON file per (book, chapter).
+
+    ``repo.json`` is sourced from the translation's ``repo_info.yaml``.
+    ``run.json`` commit_sha is the last git commit that touched the USFM file.
     """
 
     def __init__(
         self,
         *,
         output_dir: Path,
-        repo_id: str,
-        repo_name: str,
-        git_url: str | None = None,
-        commit_sha: str | None = None,
-        repo_root: Path | None = None,
+        repo_info: RepoInfo,
+        commit_sha: str,
     ) -> None:
         self.output_dir = Path(output_dir)
-        self.repo_id = repo_id
-        self.repo_name = repo_name
-        self.git_url = git_url or _git_remote_url(repo_root)
-        self.commit_sha = commit_sha or _git_commit_sha(repo_root)
+        self.repo_info = repo_info
+        self.commit_sha = commit_sha
 
     def write(
         self,
@@ -117,9 +116,9 @@ class RunWriter:
 
     def _write_repo_json(self, run_dir: Path) -> None:
         repo = {
-            "repo_id": self.repo_id,
-            "name": self.repo_name,
-            "git_url": self.git_url,
+            "repo_id": self.repo_info.repo_id,
+            "name": self.repo_info.name,
+            "git_url": self.repo_info.git_url,
         }
         _write_json(run_dir / "repo.json", repo)
 

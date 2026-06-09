@@ -35,14 +35,11 @@ from .constants import (
     DEFAULT_LANG_ROOT,
     DEFAULT_MODEL,
     DEFAULT_TRANSLATION_LANGUAGE,
-    DEFAULT_TRANSLATION_TITLE,
     MAX_CRITIC_ROUNDS,
-    REPO_ID,
-    REPO_NAME,
-    REPO_ROOT,
 )
 from .discourse import run_discourse_pass
 from .output import RunWriter, build_scope_items
+from .repo_info import RepoInfo, get_usfm_commit_sha, load_repo_info
 from .schemas import AnalysisRunMetadataObservation, ResourcesUsed, TranslationInfo
 from .skills import make_interpresure_skills_provider
 from .tools import format_verse_records_as_chapter_text, make_verse_lookup_tool
@@ -230,7 +227,6 @@ async def generate_analysis(
     chapter: int,
     biblical_language: str = DEFAULT_BIBLICAL_LANGUAGE,
     translation_language: str = DEFAULT_TRANSLATION_LANGUAGE,
-    translation_title: str = DEFAULT_TRANSLATION_TITLE,
     usfm_root: Path = DEFAULT_LANG_ROOT,
     model: str = DEFAULT_MODEL,
     critic_model: str = DEFAULT_CRITIC_MODEL,
@@ -243,8 +239,6 @@ async def generate_analysis(
     use_expert_materials: bool = False,
     discourse_boundary_markers: bool = DEFAULT_DISCOURSE_BOUNDARY_MARKERS,
     output_dir: Path,
-    repo_id: str = REPO_ID,
-    repo_name: str = REPO_NAME,
 ) -> dict[str, Any]:
     """Run the full pragmatic analysis pipeline for a chapter.
 
@@ -265,11 +259,16 @@ async def generate_analysis(
     # 1. Load scripture
     # -----------------------------------------------------------------------
     print(f"[1/6] Loading scripture: {book_upper} {chapter}")
+
+    # Load repo info for the translation — drives repo.json and run.json
+    repo_info = load_repo_info(usfm_root, translation_language)
+    print(f"  ✓ Repo: {repo_info.name} ({repo_info.repo_id})")
+
     (
         _translation_lookup,
         _biblical_lookup,
         verse_records,
-        _translation_path,
+        translation_path,
         _biblical_path,
         _translation_usfm,
         _biblical_usfm,
@@ -280,6 +279,10 @@ async def generate_analysis(
         biblical_language=biblical_language,
         usfm_root=usfm_root,
     )
+
+    # Commit SHA from the USFM file's git history, not the analysis pipeline
+    commit_sha = get_usfm_commit_sha(translation_path)
+    print(f"  ✓ Translation commit: {commit_sha}")
 
     # -----------------------------------------------------------------------
     # 2. Enrich (few-shot only)
@@ -301,26 +304,28 @@ async def generate_analysis(
         except KeyError:
             print(f"  ⚠️  No InterpreSure annotations for {book_upper} {chapter}")
 
-        if normalized_lang == "grc":
-            if macula_db_path:
-                try:
-                    verse_records = enrich_verse_records_with_macula_tokens(
-                        verse_records, macula_db_path
-                    )
-                    macula_loaded = True
-                    print(f"  ✓ MACULA tokens loaded")
-                except Exception as e:
-                    print(f"  ⚠️  MACULA enrichment failed: {e}")
+        if macula_db_path:
+            try:
+                verse_records = enrich_verse_records_with_macula_tokens(
+                    verse_records, macula_db_path, biblical_language=normalized_lang
+                )
+                macula_loaded = True
+                print(f"  ✓ MACULA tokens loaded ({normalized_lang})")
+            except Exception as e:
+                print(f"  ⚠️  MACULA enrichment failed: {e}")
 
             if bart_db_path:
-                try:
-                    verse_records = enrich_verse_records_with_bart_annotations(
-                        verse_records, bart_db_path
-                    )
-                    bart_loaded = True
-                    print(f"  ✓ BART annotations loaded")
-                except Exception as e:
-                    print(f"  ⚠️  BART enrichment failed: {e}")
+                if normalized_lang != "grc":
+                    print(f"  ℹ️  Skipping BART — Greek NT only (language={normalized_lang})")
+                else:
+                    try:
+                        verse_records = enrich_verse_records_with_bart_annotations(
+                            verse_records, bart_db_path
+                        )
+                        bart_loaded = True
+                        print(f"  ✓ BART annotations loaded")
+                    except Exception as e:
+                        print(f"  ⚠️  BART enrichment failed: {e}")
     else:
         print("[2/6] Zero-shot mode — skipping expert enrichment")
 
@@ -354,13 +359,29 @@ async def generate_analysis(
     )
 
     # -----------------------------------------------------------------------
-    # 4. Global discourse pass
+    # 4. Build resources list for provenance stamping
+    # -----------------------------------------------------------------------
+    resources_list: list[str] = []
+    if interpresure_loaded:
+        resources_list.append("interpresure")
+    if macula_loaded:
+        resources_list.append("macula")
+    if bart_loaded:
+        resources_list.append("bart_displays")
+
+    # -----------------------------------------------------------------------
+    # 5. Global discourse pass
     # -----------------------------------------------------------------------
     print("[4/6] Running global discourse pass")
     discourse_map = await run_discourse_pass(
         verse_records=verse_records,
         biblical_language=normalized_lang,
         discourse_agent=discourse_agent,
+    )
+    # Stamp provenance — the LLM doesn't know its own name or what resources
+    # were provided; we set these fields after parsing.
+    discourse_map = discourse_map.model_copy(
+        update={"model": model, "resources": resources_list}
     )
     boundary_starts = discourse_map.boundary_start_verses()
     print(
@@ -370,7 +391,7 @@ async def generate_analysis(
     )
 
     # -----------------------------------------------------------------------
-    # 5. Verse-by-verse loop
+    # 6. Verse-by-verse loop
     # -----------------------------------------------------------------------
     print(f"[5/6] Analysing {len(verse_records)} verse(s)")
 
@@ -407,14 +428,19 @@ async def generate_analysis(
             output_schema=output_schema,
             max_rounds=max_rounds,
         )
+        # Stamp provenance
+        obs = obs.model_copy(update={"model": model, "resources": resources_list})
         verse_observations.append((verse_num, obs))
 
     # -----------------------------------------------------------------------
-    # 5b. Chapter summary
+    # 6b. Chapter summary
     # -----------------------------------------------------------------------
     print("  → Chapter summary")
     summary_result = await analyst.run(_build_chapter_summary_prompt(), session=session)
     chapter_summary = await _parse_observation(summary_result, output_schema)
+    chapter_summary = chapter_summary.model_copy(
+        update={"model": model, "resources": resources_list}
+    )
 
     # -----------------------------------------------------------------------
     # 6. Write output
@@ -429,8 +455,8 @@ async def generate_analysis(
         analysis_type=analysis_type,
         timestamp=run_timestamp.isoformat(),
         translation=TranslationInfo(
-            language=translation_language,
-            title=translation_title,
+            language=repo_info.language,
+            title=repo_info.name,
         ),
         biblical_language=normalized_lang,
         resources=ResourcesUsed(
@@ -452,8 +478,8 @@ async def generate_analysis(
 
     writer = RunWriter(
         output_dir=output_dir,
-        repo_id=repo_id,
-        repo_name=repo_name,
+        repo_info=repo_info,
+        commit_sha=commit_sha,
     )
     run_dir = writer.write(
         book=book_upper,

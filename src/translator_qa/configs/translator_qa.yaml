@@ -1,0 +1,22 @@
+# Translator QA pipeline — template config
+# Copy to translator_qa.generate.yaml or translator_qa.answer.yaml and fill in.
+
+common:
+  biblical_language: grc        # grc | heb
+  usfm_root: ../../../lang
+  model: gpt-5.4
+  api_key_env: OPENAI_API_KEY
+  output_dir: ../../../out/runs
+  questions_dir: ../../../out/questions
+
+  # Optional enrichment databases (omit if not available)
+  macula_db_path: ../../../src/macula_heb_grc.db
+  bart_db_path: ../../../src/NT_BART_Annotations.db
+
+generate:
+  book: ROM
+  chapter: 3
+
+answer:
+  questions_file: ../../../out/questions/ROM_3_questions_20260608T154524.json
+  translation_language: en

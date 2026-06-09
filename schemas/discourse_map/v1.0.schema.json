@@ -4,7 +4,7 @@
   "title": "Discourse Map",
   "description": "Structured output of the global discourse pass for a chapter. Anchored at chapter level. Establishes the discourse framework — QUDs, argument structure, boundaries, relational dynamics — that grounds the verse-level analyses.",
   "type": "object",
-  "required": ["type", "version", "argument_structure", "genre_notes"],
+  "required": ["type", "version", "model", "resources", "argument_structure", "genre_notes"],
   "additionalProperties": false,
   "properties": {
     "type": {
@@ -15,10 +15,19 @@
       "const": "1.0",
       "description": "Schema version."
     },
+    "model": {
+      "type": "string",
+      "description": "Model that produced this observation. Set by the pipeline after generation, not by the LLM itself."
+    },
+    "resources": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Resources used to produce this observation, e.g. [\"interpresure\", \"macula\", \"bart_displays\"]. Empty list for zero-shot runs."
+    },
     "dominant_quds": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "description": "The dominant Questions Under Discussion active across this chapter. These are the implicit or explicit issues the discourse is building toward or answering."
+      "description": "The dominant Questions Under Discussion active across this chapter."
     },
     "argument_structure": {
       "type": "string",
@@ -49,26 +58,26 @@
           }
         }
       },
-      "description": "Discourse units with verse ranges and functional descriptions. Boundaries are identified from structure, QUD shifts, topic changes, or genre markers."
+      "description": "Discourse units with verse ranges and functional descriptions."
     },
     "relational_dynamics": {
       "type": "string",
-      "description": "The social and relational context operative across the chapter: speaker-addressee relationship, power/solidarity balance, face considerations, and how these shift."
+      "description": "The social and relational context operative across the chapter."
     },
     "active_scales": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "description": "Scalar dimensions active in this chapter (e.g. obligation/permission, honor/shame, affection/distance). These are the scales whose endpoints matter for pragmatic interpretation."
+      "description": "Scalar dimensions active in this chapter."
     },
     "key_presuppositions": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
-      "description": "Background assumptions the chapter takes for granted — propositions that are presupposed rather than asserted and that ground the discourse."
+      "description": "Background assumptions the chapter takes for granted."
     },
     "genre_notes": {
       "type": "string",
       "minLength": 1,
-      "description": "Genre and register observations affecting interpretation: what kind of text this is, what norms govern it, and how that shapes pragmatic expectations."
+      "description": "Genre and register observations affecting interpretation."
     }
   }
 }

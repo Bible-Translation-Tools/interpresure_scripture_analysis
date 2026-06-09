@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from analysis.output import RunWriter, _git_commit_sha, _git_remote_url, build_scope_items
+from analysis.repo_info import RepoInfo
 from analysis.schemas import AnalysisItem
 
 
@@ -163,9 +164,12 @@ class TestRunWriter:
     def writer(self, tmp_path):
         return RunWriter(
             output_dir=tmp_path,
-            repo_id="test-repo",
-            repo_name="Test Repo",
-            git_url="https://github.com/test/repo.git",
+            repo_info=RepoInfo(
+                repo_id="test-repo",
+                name="Test Repo",
+                language="en",
+                git_url="https://github.com/test/repo.git",
+            ),
             commit_sha="abc1234",
         )
 
@@ -253,8 +257,8 @@ class TestRunWriter:
         deep_dir = tmp_path / "a" / "b" / "c"
         writer = RunWriter(
             output_dir=deep_dir,
-            repo_id="r", repo_name="R",
-            git_url="", commit_sha="abc",
+            repo_info=RepoInfo(repo_id="r", name="R", language="en", git_url=""),
+            commit_sha="abc",
         )
         items: list[AnalysisItem] = []
         run_dir = writer.write(book="PHM", chapter=1, items=items)

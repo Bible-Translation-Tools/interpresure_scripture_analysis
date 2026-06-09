@@ -12,7 +12,6 @@ DEFAULT_OUTPUT_DIR = REPO_ROOT / "out" / "runs"
 
 # Language defaults
 DEFAULT_TRANSLATION_LANGUAGE = "en"
-DEFAULT_TRANSLATION_TITLE = "ULT"
 DEFAULT_BIBLICAL_LANGUAGE = "grc"
 
 # Model defaults
@@ -25,7 +24,3 @@ DEFAULT_DISCOURSE_BOUNDARY_MARKERS = True
 
 # Critic review loop
 MAX_CRITIC_ROUNDS = 3
-
-# scripture-analysis-api repo identity (override via YAML or CLI)
-REPO_ID = "interpresure-scripture-analysis"
-REPO_NAME = "InterpreSure Scripture Analysis"

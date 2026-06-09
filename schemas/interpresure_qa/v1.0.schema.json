@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scripture-analysis/interpresure_qa/1.0",
+  "title": "InterPresure Q&A",
+  "description": "A single pragmatic-goal question posed to an AI model, its answer, and a pass/fail/na verdict with severity and confidence scores.",
+  "type": "object",
+  "required": ["type", "version", "question", "answer", "model", "result", "severity", "confidence"],
+  "additionalProperties": false,
+  "properties": {
+    "type":       { "type": "string", "const": "interpresure_qa",  "description": "Observation type identifier." },
+    "version":    { "type": "string", "const": "1.0",              "description": "Schema version." },
+    "question":   { "type": "string", "minLength": 1,              "description": "The pragmatic-goal question posed to the model." },
+    "answer":     { "type": "string", "minLength": 1,              "description": "The model's answer to the question." },
+    "model":      { "type": "string", "minLength": 1,              "description": "Identifier of the AI model that produced the answer (e.g. 'gpt-4o', 'claude-3-7-sonnet')." },
+    "reasoning":  { "type": "string",                              "description": "Optional chain-of-thought or explanation produced by the model before reaching its answer." },
+    "result":     { "type": "string", "enum": ["pass", "fail", "na"], "description": "Whether the pragmatic goal was achieved (pass), not achieved (fail), or not directly assessable by this question and requires human judgment (na)." },
+    "severity":   { "type": "integer", "minimum": 0, "maximum": 10, "description": "For fail: severity of the issue (0 = trivial, 10 = critical). For na: importance for human review. For pass: should be 0." },
+    "confidence": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Model's self-reported confidence in its answer, 0-100." }
+  }
+}

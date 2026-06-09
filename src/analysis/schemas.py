@@ -77,6 +77,17 @@ class DiscourseMapObservation(BaseModel):
 
     type: Literal["discourse_map"] = "discourse_map"
     version: Literal["1.0"] = "1.0"
+    model: str = Field(
+        default="",
+        description="Model that produced this observation. Set by the pipeline, not the LLM.",
+    )
+    resources: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Resources used to produce this observation, e.g. "
+            '["interpresure", "macula", "bart_displays"].'
+        ),
+    )
     dominant_quds: list[str] = Field(
         default_factory=list,
         description="Dominant Questions Under Discussion active across this chapter.",
@@ -131,6 +142,17 @@ class InterpreSureSuggestionsObservation(BaseModel):
 
     type: Literal["interpresure_suggestions"] = "interpresure_suggestions"
     version: Literal["2.0"] = "2.0"
+    model: str = Field(
+        default="",
+        description="Model that produced this observation. Set by the pipeline, not the LLM.",
+    )
+    resources: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Resources used to produce this observation, e.g. "
+            '["interpresure", "macula", "bart_displays"].'
+        ),
+    )
     strengths: list[str] = Field(
         default_factory=list,
         description="What the translation does well pragmatically.",
@@ -182,6 +204,15 @@ class TranslatorQuestion(BaseModel):
     question: str = Field(
         ...,
         description="Plain-language question answerable from the translation alone.",
+    )
+    importance: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description=(
+            "How important this question is for meaning preservation "
+            "(1 = minor nuance, 10 = critical for the main communicative point)."
+        ),
     )
     rationale: str | None = Field(
         default=None,
